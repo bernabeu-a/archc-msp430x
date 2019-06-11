@@ -36,6 +36,7 @@ void ac_behavior( instruction )
 void ac_behavior( Type_DoubleOp ) {}
 void ac_behavior( Type_SimpleOp ) {}
 void ac_behavior( Type_Jump ) {}
+void ac_behavior( Type_PushPopM ){}
  
 //!Instruction MOV behavior method.
 void ac_behavior( MOV )
@@ -180,4 +181,7 @@ void ac_behavior( JL ){}
 
 //!Instruction JMP behavior method.
 void ac_behavior( JMP ){}
+
+//!Instruction PUSHPOPM behavior method.
+void ac_behavior( PUSHPOPM ){}
 
