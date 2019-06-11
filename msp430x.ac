@@ -1,0 +1,12 @@
+AC_ARCH(msp430x) {
+
+  ac_mem DM:512M;
+  ac_regbank RB:16;
+
+  ac_wordsize 16;
+
+  ARCH_CTOR(msp430x) {
+    ac_isa("msp430x_isa.ac");
+    set_endian("little");
+  };
+};

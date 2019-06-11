@@ -1,0 +1,90 @@
+AC_ISA(msp430x){
+  ac_helper {
+/*
+    #include "riscv_isa_helper.H"
+*/
+  };
+
+  ac_format Type_DoubleOp =
+    "%rdst:4 %as:2 %bw:1 %ad:1 %rsrc:4 %op:4";
+
+  ac_format Type_SimpleOp =
+    "%rdst:4 %ad:2 %bw:1 %op:9";
+
+  ac_format Type_Jump =
+    "%offset:10 %cond:3 %op:3";
+
+  // MSP430
+  ac_instr<Type_DoubleOp> MOV, ADD, ADDC, SUB, SUBC, CMP, DADD, BIT, BIC, BIS, XOR, AND;
+  ac_instr<Type_SimpleOp> RRC, RRA, PUSH, SWPB, CALL, RETI, SXT;
+  ac_instr<Type_Jump>     JZ, JNZ, JC, JNC, JN, JGE, JL, JMP;
+
+  //MSP430X specific register names
+  ac_asm_map reg {
+    "$"[0..31] = [0..31];
+    "$pc" = 0;
+    "$sp" = 1;
+    "$sr" = 2;
+    "$cgr" = 3;
+  }
+
+  ISA_CTOR(msp430x){
+    MOV.set_decoder(op = 0x4);
+
+    ADD.set_decoder(op = 0x5);
+
+    ADDC.set_decoder(op = 0x6);
+
+    SUBC.set_decoder(op = 0x7);
+
+    SUB.set_decoder(op = 0x8);
+
+    CMP.set_decoder(op = 0x9);
+
+    DADD.set_decoder(op = 0xa);
+
+    BIT.set_decoder(op = 0xb);
+
+    BIC.set_decoder(op = 0xc);
+
+    BIS.set_decoder(op = 0xd);
+
+    XOR.set_decoder(op = 0xe);
+
+    AND.set_decoder(op = 0xf);
+
+    RRC.set_decoder(op = 0x20);
+
+    SWPB.set_decoder(op = 0x21);
+
+    RRA.set_decoder(op = 0x22);
+
+    SXT.set_decoder(op = 0x23);
+
+    PUSH.set_decoder(op = 0x24);
+
+    CALL.set_decoder(op = 0x25);
+
+    RETI.set_decoder(op = 0x26);
+
+    //CALLA.set_decoder(op = 0x26);
+
+    JNZ.set_decoder(op = 0x1, cond=0x0);
+
+    JZ.set_decoder(op = 0x1, cond=0x1);
+
+    JNC.set_decoder(op = 0x1, cond=0x2);
+
+    JC.set_decoder(op = 0x1, cond=0x3);
+
+    JN.set_decoder(op = 0x1, cond=0x4);
+
+    JGE.set_decoder(op = 0x1, cond=0x5);
+
+    JL.set_decoder(op = 0x1, cond=0x6);
+
+    JMP.set_decoder(op = 0x1, cond=0x7);
+
+    //LUI.set_asm("LUI %reg, %exp", rd, imm);
+  };
+};
