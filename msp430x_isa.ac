@@ -6,13 +6,13 @@ AC_ISA(msp430x){
   };
 
   ac_format Type_DoubleOp =
-    "%rdst:4 %as:2 %bw:1 %ad:1 %rsrc:4 %op:4";
+    "%op:4 %rsrc:4 %ad:1 %bw:1 %as:2 %rdst:4";
 
   ac_format Type_SimpleOp =
-    "%rdst:4 %ad:2 %bw:1 %op:9";
+    "%op:9 %bw:1 %ad:2 %rdst:4";
 
   ac_format Type_Jump =
-    "%offset:10 %cond:3 %op:3";
+    "%op:3 %cond:3 %offset:10";
 
   // MSP430
   ac_instr<Type_DoubleOp> MOV, ADD, ADDC, SUB, SUBC, CMP, DADD, BIT, BIC, BIS, XOR, AND;
@@ -22,10 +22,10 @@ AC_ISA(msp430x){
   //MSP430X specific register names
   ac_asm_map reg {
     "$"[0..31] = [0..31];
-    "$pc" = 0;
-    "$sp" = 1;
-    "$sr" = 2;
-    "$cgr" = 3;
+    "pc" = 0;
+    "sp" = 1;
+    "sr" = 2;
+    "cgr" = 3;
   }
 
   ISA_CTOR(msp430x){
