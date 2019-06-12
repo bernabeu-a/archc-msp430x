@@ -57,6 +57,7 @@ void ac_behavior( MOV )
         {
             int16_t x = DM.read(ac_pc + 2);
             operand_src = DM.read(RB[rsrc] + x);
+            RB[REG_PC] += 2;
             break;
         }
 
@@ -78,6 +79,7 @@ void ac_behavior( MOV )
             // Oops
             break;
     }
+    ac_pc = RB[REG_PC];
 
     std::cout << "operand=" << std::hex << operand_src << std::endl;
 
@@ -93,6 +95,7 @@ void ac_behavior( MOV )
         {
             int16_t x = DM.read(ac_pc + 2);
             DM.write(RB[rdst] + x, operand_src);
+            RB[REG_PC] += 2;
             break;
         }
 
@@ -100,7 +103,6 @@ void ac_behavior( MOV )
             // Oops
             break;
     }
-
     ac_pc = RB[REG_PC];
 }
 
