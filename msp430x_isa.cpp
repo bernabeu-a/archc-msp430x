@@ -51,28 +51,37 @@ void ac_behavior( MOV )
     {
         case AM_REGISTER:
             operand_src = RB[rsrc];
+            if(bw)
+                operand_src &= 0xff;
             break;
 
         case AM_INDEXED:
         {
             int16_t x = DM.read(ac_pc + 2);
-            operand_src = DM.read(RB[rsrc] + x);
+            if(bw)
+                operand_src = DM.read_byte(RB[rsrc] + x);
+            else
+                operand_src = DM.read(RB[rsrc] + x);
             RB[REG_PC] += 2;
             break;
         }
 
         case AM_INDIRECT_REG:
-            operand_src = DM.read(RB[rsrc]);
+            if(bw)
+                operand_src = DM.read_byte(RB[rsrc]);
+            else
+                operand_src = DM.read(RB[rsrc]);
             break;
 
         case AM_INDIRECT_INCR:
             operand_src = DM.read(RB[rsrc]);
             std::cout << "tmp=" << std::hex << RB[rsrc] << std::endl;
             // /!\ Here, pc may change if rsrc==0, which is the expected behavior
-            if(bw)
-                RB[rsrc] += 1;
-            else
+            // TODO: 20bit address mode?
+            if(rsrc == REG_PC || !bw)
                 RB[rsrc] += 2;
+            else
+                RB[rsrc] += 1;
             break;
 
         default:
@@ -85,6 +94,9 @@ void ac_behavior( MOV )
 
     // TODO: op
 
+    if(bw)
+        operand_src &= 0xff;
+
     switch(ad)
     {
         case AM_REGISTER:
@@ -94,7 +106,10 @@ void ac_behavior( MOV )
         case AM_INDEXED:
         {
             int16_t x = DM.read(ac_pc + 2);
-            DM.write(RB[rdst] + x, operand_src);
+            if(bw)
+                DM.write_byte(RB[rdst] + x, operand_src);
+            else
+                DM.write(RB[rdst] + x, operand_src);
             RB[REG_PC] += 2;
             break;
         }
