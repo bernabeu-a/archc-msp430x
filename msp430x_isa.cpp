@@ -18,6 +18,91 @@ enum addressing_mode_e
     AM_INVALID
 };
 
+static uint16_t doubleop_source(
+    ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
+    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
+    ac_reg<unsigned> &ac_pc,
+    uint16_t as, uint16_t bw, uint16_t rsrc)
+{
+    uint16_t operand;
+
+    switch(as)
+    {
+        case AM_REGISTER:
+            operand = RB[rsrc];
+            if(bw)
+                operand &= 0xff;
+            break;
+
+        case AM_INDEXED:
+        {
+            int16_t x = DM.read(ac_pc + 2);
+            if(bw)
+                operand = DM.read_byte(RB[rsrc] + x);
+            else
+                operand = DM.read(RB[rsrc] + x);
+            RB[REG_PC] += 2;
+            break;
+        }
+
+        case AM_INDIRECT_REG:
+            if(bw)
+                operand = DM.read_byte(RB[rsrc]);
+            else
+                operand = DM.read(RB[rsrc]);
+            break;
+
+        case AM_INDIRECT_INCR:
+            operand = DM.read(RB[rsrc]);
+            std::cout << "tmp=" << std::hex << RB[rsrc] << std::endl;
+            // /!\ Here, pc may change if rsrc==0, which is the expected behavior
+            // TODO: 20bit address mode?
+            if(rsrc == REG_PC || !bw)
+                RB[rsrc] += 2;
+            else
+                RB[rsrc] += 1;
+            break;
+
+        default:
+            // Oops
+            break;
+    }
+    ac_pc = RB[REG_PC];
+
+    return operand;
+}
+
+static void doubleop_dest(
+    ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
+    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
+    ac_reg<unsigned> &ac_pc,
+    uint16_t operand,
+    uint16_t ad, uint16_t bw, uint16_t rdst)
+{
+    switch(ad)
+    {
+        case AM_REGISTER:
+            RB[rdst] = operand;
+            break;
+
+        case AM_INDEXED:
+        {
+            int16_t x = DM.read(ac_pc + 2);
+            if(bw)
+                DM.write_byte(RB[rdst] + x, operand);
+            else
+                DM.write(RB[rdst] + x, operand);
+            RB[REG_PC] += 2;
+            break;
+        }
+
+        default:
+            // Oops
+            break;
+    }
+    ac_pc = RB[REG_PC];
+}
+
 //!Behavior executed before simulation begins.
 void ac_behavior( begin ){}
 
@@ -41,84 +126,17 @@ void ac_behavior( Type_PushPopM ){}
 //!Instruction MOV behavior method.
 void ac_behavior( MOV )
 {
-    uint16_t operand_src;
+    uint16_t operand = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
 
     // rdst, as, bw, ad, rsrc, op
     printf("rdst=%x\nas=%x\nbw=%x\nad=%x\nrsrc=%x\n", rdst, as, bw, ad, rsrc);
 
-    // TODO: byte transactions
-    switch(as)
-    {
-        case AM_REGISTER:
-            operand_src = RB[rsrc];
-            if(bw)
-                operand_src &= 0xff;
-            break;
-
-        case AM_INDEXED:
-        {
-            int16_t x = DM.read(ac_pc + 2);
-            if(bw)
-                operand_src = DM.read_byte(RB[rsrc] + x);
-            else
-                operand_src = DM.read(RB[rsrc] + x);
-            RB[REG_PC] += 2;
-            break;
-        }
-
-        case AM_INDIRECT_REG:
-            if(bw)
-                operand_src = DM.read_byte(RB[rsrc]);
-            else
-                operand_src = DM.read(RB[rsrc]);
-            break;
-
-        case AM_INDIRECT_INCR:
-            operand_src = DM.read(RB[rsrc]);
-            std::cout << "tmp=" << std::hex << RB[rsrc] << std::endl;
-            // /!\ Here, pc may change if rsrc==0, which is the expected behavior
-            // TODO: 20bit address mode?
-            if(rsrc == REG_PC || !bw)
-                RB[rsrc] += 2;
-            else
-                RB[rsrc] += 1;
-            break;
-
-        default:
-            // Oops
-            break;
-    }
-    ac_pc = RB[REG_PC];
-
-    std::cout << "operand=" << std::hex << operand_src << std::endl;
-
-    // TODO: op
+    std::cout << "operand=" << std::hex << operand << std::endl;
 
     if(bw)
-        operand_src &= 0xff;
+        operand &= 0xff;
 
-    switch(ad)
-    {
-        case AM_REGISTER:
-            RB[rdst] = operand_src;
-            break;
-
-        case AM_INDEXED:
-        {
-            int16_t x = DM.read(ac_pc + 2);
-            if(bw)
-                DM.write_byte(RB[rdst] + x, operand_src);
-            else
-                DM.write(RB[rdst] + x, operand_src);
-            RB[REG_PC] += 2;
-            break;
-        }
-
-        default:
-            // Oops
-            break;
-    }
-    ac_pc = RB[REG_PC];
+    doubleop_dest(DM, RB, ac_pc, operand, ad, bw, rdst);
 }
 
 //!Instruction ADD behavior method.
@@ -146,7 +164,15 @@ void ac_behavior( BIT ){}
 void ac_behavior( BIC ){}
 
 //!Instruction BIS behavior method.
-void ac_behavior( BIS ){}
+void ac_behavior( BIS )
+{
+    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    
+    // rdst, as, bw, ad, rsrc, op
+    printf("rdst=%x\nas=%x\nbw=%x\nad=%x\nrsrc=%x\n", rdst, as, bw, ad, rsrc);
+
+    std::cout << "operand=" << std::hex << operand_src << std::endl;
+}
 
 //!Instruction XOR behavior method.
 void ac_behavior( XOR ){}
