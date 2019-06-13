@@ -5,9 +5,31 @@
 #include  "msp430x_bhv_macros.H"
 
 #define REG_PC 0
+#define REG_SP 1
+#define REG_SR 2
 
 //!'using namespace' statement to allow access to all msp430x-specific datatypes
 using namespace msp430x_parms;
+
+struct sr_flags_t
+{
+    unsigned int V, SCG1, SCG0, OSCOFF, CPUOFF, GIE, N, Z, C;
+
+    sr_flags_t(
+        ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB)
+    {
+        uint16_t sr = RB[REG_SR];
+        V      = ((sr >> 8) & 1);
+        SCG1   = ((sr >> 7) & 1);
+        SCG0   = ((sr >> 6) & 1);
+        OSCOFF = ((sr >> 5) & 1);
+        CPUOFF = ((sr >> 4) & 1);
+        GIE    = ((sr >> 3) & 1);
+        N      = ((sr >> 2) & 1);
+        Z      = ((sr >> 1) & 1);
+        C      = ((sr     ) & 1);
+    }
+};
 
 enum addressing_mode_e
 {
@@ -54,7 +76,6 @@ static uint16_t doubleop_source(
 
         case AM_INDIRECT_INCR:
             operand = DM.read(RB[rsrc]);
-            std::cout << "tmp=" << std::hex << RB[rsrc] << std::endl;
             // /!\ Here, pc may change if rsrc==0, which is the expected behavior
             // TODO: 20bit address mode?
             if(rsrc == REG_PC || !bw)
@@ -155,40 +176,97 @@ void ac_behavior( MOV )
 {
     uint16_t operand = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
 
-    // rdst, as, bw, ad, rsrc, op
-    printf("rdst=%x\nas=%x\nbw=%x\nad=%x\nrsrc=%x\n", rdst, as, bw, ad, rsrc);
-
-    std::cout << "operand=" << std::hex << operand << std::endl;
-
-    if(bw)
-        operand &= 0xff;
-
     doubleop_dest(DM, RB, ac_pc, operand, ad, bw, rdst);
 }
 
 //!Instruction ADD behavior method.
-void ac_behavior( ADD ){}
+void ac_behavior( ADD )
+{
+    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+
+    operand_dst += operand_src;
+
+    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+}
 
 //!Instruction ADDC behavior method.
-void ac_behavior( ADDC ){}
+void ac_behavior( ADDC )
+{
+    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    sr_flags_t sr(RB);
+
+    operand_dst += operand_src + sr.C;
+
+    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+}
 
 //!Instruction SUB behavior method.
-void ac_behavior( SUB ){}
+void ac_behavior( SUB )
+{
+    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+
+    operand_dst += ~operand_src + 1;
+
+    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+}
 
 //!Instruction SUBC behavior method.
-void ac_behavior( SUBC ){}
+void ac_behavior( SUBC )
+{
+    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    sr_flags_t sr(RB);
+
+    operand_dst += ~operand_src + sr.C;
+
+    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+}
 
 //!Instruction CMP behavior method.
-void ac_behavior( CMP ){}
+void ac_behavior( CMP )
+{
+    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t tmp = operand_dst;
+
+    operand_dst -= operand_src;
+
+    // Do not change the value
+    doubleop_dest(DM, RB, ac_pc, tmp, ad, bw, rdst);
+}
 
 //!Instruction DADD behavior method.
-void ac_behavior( DADD ){}
+void ac_behavior( DADD )
+{
+    std::cerr << "oops" << std::endl;
+}
 
 //!Instruction BIT behavior method.
-void ac_behavior( BIT ){}
+void ac_behavior( BIT )
+{
+    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t tmp = operand_dst;
+
+    operand_dst &= operand_src;
+
+    // Do not change the value
+    doubleop_dest(DM, RB, ac_pc, tmp, ad, bw, rdst);
+}
 
 //!Instruction BIC behavior method.
-void ac_behavior( BIC ){}
+void ac_behavior( BIC )
+{
+    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+
+    operand_dst &= ~operand_src;
+
+    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+}
 
 //!Instruction BIS behavior method.
 void ac_behavior( BIS )
@@ -202,10 +280,26 @@ void ac_behavior( BIS )
 }
 
 //!Instruction XOR behavior method.
-void ac_behavior( XOR ){}
+void ac_behavior( XOR )
+{
+    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+
+    operand_dst ^= operand_src;
+
+    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+}
 
 //!Instruction AND behavior method.
-void ac_behavior( AND ){}
+void ac_behavior( AND )
+{
+    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+
+    operand_dst &= operand_src;
+
+    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+}
 
 //!Instruction RRC behavior method.
 void ac_behavior( RRC ){}
