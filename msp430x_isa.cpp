@@ -241,7 +241,7 @@ void ac_behavior( CMP )
 //!Instruction DADD behavior method.
 void ac_behavior( DADD )
 {
-    std::cerr << "oops" << std::endl;
+    std::cerr << "oops (DADD)" << std::endl;
 }
 
 //!Instruction BIT behavior method.
@@ -308,13 +308,25 @@ void ac_behavior( RRC ){}
 void ac_behavior( RRA ){}
 
 //!Instruction PUSH behavior method.
-void ac_behavior( PUSH ){}
+void ac_behavior( PUSH )
+{
+    std::cerr << "oops (PUSH)" << std::endl;
+}
 
 //!Instruction SWPB behavior method.
 void ac_behavior( SWPB ){}
 
 //!Instruction CALL behavior method.
-void ac_behavior( CALL ){}
+void ac_behavior( CALL )
+{
+    uint16_t address = doubleop_source(DM, RB, ac_pc, ad, 0, rdst);
+    RB[REG_SP] -= 2;
+    DM.write(RB[REG_SP], RB[REG_PC]);
+    RB[REG_PC] = address;
+    ac_pc = RB[REG_PC];
+
+    printf("CALL:\n Rdst=%d\n Ad=%d\n\n", rdst, ad);
+}
 
 //!Instruction RETI behavior method.
 void ac_behavior( RETI ){}
@@ -323,29 +335,56 @@ void ac_behavior( RETI ){}
 void ac_behavior( SXT ){}
 
 //!Instruction JZ behavior method.
-void ac_behavior( JZ ){}
+void ac_behavior( JZ )
+{
+    std::cerr << "oops (JZ)" << std::endl;
+}
 
 //!Instruction JNZ behavior method.
-void ac_behavior( JNZ ){}
+void ac_behavior( JNZ )
+{
+    std::cerr << "oops (JNZ)" << std::endl;
+}
 
 //!Instruction JC behavior method.
-void ac_behavior( JC ){}
+void ac_behavior( JC )
+{
+    std::cerr << "oops (JC)" << std::endl;
+}
 
 //!Instruction JNC behavior method.
-void ac_behavior( JNC ){}
+void ac_behavior( JNC )
+{
+    std::cerr << "oops (JNC)" << std::endl;
+}
 
 //!Instruction JN behavior method.
-void ac_behavior( JN ){}
+void ac_behavior( JN )
+{
+    std::cerr << "oops (JN)" << std::endl;
+}
 
 //!Instruction JGE behavior method.
-void ac_behavior( JGE ){}
+void ac_behavior( JGE )
+{
+    std::cerr << "oops (JGE)" << std::endl;
+}
 
 //!Instruction JL behavior method.
-void ac_behavior( JL ){}
+void ac_behavior( JL )
+{
+    std::cerr << "oops (JL)" << std::endl;
+}
 
 //!Instruction JMP behavior method.
-void ac_behavior( JMP ){}
+void ac_behavior( JMP )
+{
+    std::cerr << "oops (JMP)" << std::endl;
+}
 
 //!Instruction PUSHPOPM behavior method.
-void ac_behavior( PUSHPOPM ){}
+void ac_behavior( PUSHPOPM )
+{
+    std::cerr << "oops (PUSHPOPM)" << std::endl;
+}
 
