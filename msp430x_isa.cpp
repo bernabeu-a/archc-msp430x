@@ -40,6 +40,14 @@ enum addressing_mode_e
     AM_INVALID
 };
 
+static int16_t u10_to_i16(uint16_t u10)
+{
+    uint16_t tmp = (u10 & 0x01ff);
+    if(u10 & (1 << 9))
+        tmp |= 0xfe00;
+    return tmp;
+}
+
 static uint16_t doubleop_source(
     ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
@@ -337,7 +345,13 @@ void ac_behavior( SXT ){}
 //!Instruction JZ behavior method.
 void ac_behavior( JZ )
 {
-    std::cerr << "oops (JZ)" << std::endl;
+    sr_flags_t sr(RB);
+    if(sr.Z)
+    {
+        int16_t signed_offset = 2 * u10_to_i16(offset);
+        RB[REG_PC] += signed_offset;
+        // TODO: Check whether PC gets incremented by 2 at the end (should be true)
+    }
 }
 
 //!Instruction JNZ behavior method.
