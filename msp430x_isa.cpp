@@ -72,6 +72,33 @@ static uint16_t doubleop_source(
     return operand;
 }
 
+static uint16_t doubleop_dest_operand(
+    ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
+    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
+    const ac_reg<unsigned> &ac_pc,
+    uint16_t ad, uint16_t bw, uint16_t rdst)
+{
+    switch(ad)
+    {
+        case AM_REGISTER:
+            return RB[rdst];
+
+        case AM_INDEXED:
+        {
+            int16_t x = DM.read(ac_pc + 2);
+            if(bw)
+                return DM.read_byte(RB[rdst] + x);
+            else
+                return DM.read(RB[rdst] + x);
+        }
+
+        default:
+            // Oops
+            break;
+    }
+    return -1;
+}
+
 static void doubleop_dest(
     ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
@@ -167,11 +194,11 @@ void ac_behavior( BIC ){}
 void ac_behavior( BIS )
 {
     uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    
-    // rdst, as, bw, ad, rsrc, op
-    printf("rdst=%x\nas=%x\nbw=%x\nad=%x\nrsrc=%x\n", rdst, as, bw, ad, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
 
-    std::cout << "operand=" << std::hex << operand_src << std::endl;
+    operand_dst |= operand_src;
+
+    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
 }
 
 //!Instruction XOR behavior method.
