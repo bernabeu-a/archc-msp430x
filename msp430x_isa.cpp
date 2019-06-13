@@ -399,6 +399,35 @@ void ac_behavior( JMP )
 //!Instruction PUSHPOPM behavior method.
 void ac_behavior( PUSHPOPM )
 {
-    std::cerr << "oops (PUSHPOPM)" << std::endl;
+    uint16_t n = 1 + n1;
+    uint16_t rdst = rdst1 + n1;
+
+    if(!(subop & 0x1))
+        std::cerr << "PUSHPOPM: address mode not supported." << std::endl;
+
+    std::cout << "PUSHPOP:" << std::endl
+              << " n=" << std::dec << n << std::endl
+              << " rdst=" << rdst << std::endl
+              << " before: SP=" << std::hex << RB[REG_SP] << std::endl;
+
+    if(!(subop & 0x2)) // PUSHM
+    {
+        for(; n; --n, --rdst)
+        {
+            DM.write(RB[REG_SP], RB[rdst]);
+            RB[REG_SP] -= 2;
+        }
+    }
+    else // POPM
+    {
+        for(; n; --n, --rdst)
+        {
+            RB[REG_SP] += 2;
+            RB[rdst] = DM.read(RB[REG_SP]);
+        }
+    }
+
+    std::cout << " after: SP=" << std::hex << RB[REG_SP] << std::endl
+              << std::endl;
 }
 
