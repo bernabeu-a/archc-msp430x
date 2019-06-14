@@ -332,10 +332,16 @@ void ac_behavior( AND )
 }
 
 //!Instruction RRC behavior method.
-void ac_behavior( RRC ){}
+void ac_behavior( RRC )
+{
+    std::cerr << "oops (RRC)" << std::endl;
+}
 
 //!Instruction RRA behavior method.
-void ac_behavior( RRA ){}
+void ac_behavior( RRA )
+{
+    std::cerr << "oops (RRA)" << std::endl;
+}
 
 //!Instruction PUSH behavior method.
 void ac_behavior( PUSH )
@@ -359,10 +365,16 @@ void ac_behavior( CALL )
 }
 
 //!Instruction RETI behavior method.
-void ac_behavior( RETI ){}
+void ac_behavior( RETI )
+{
+    std::cout << "oops (RETI)" << std::endl;
+}
 
 //!Instruction SXT behavior method.
-void ac_behavior( SXT ){}
+void ac_behavior( SXT )
+{
+    std::cout << "oops (SXT)" << std::endl;
+}
 
 //!Instruction JZ behavior method.
 void ac_behavior( JZ )
