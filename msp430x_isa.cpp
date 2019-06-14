@@ -51,7 +51,6 @@ static int16_t u10_to_i16(uint16_t u10)
 static uint16_t doubleop_source(
     ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
-    ac_reg<unsigned> &ac_pc,
     uint16_t as, uint16_t bw, uint16_t rsrc)
 {
     uint16_t operand;
@@ -66,11 +65,12 @@ static uint16_t doubleop_source(
 
         case AM_INDEXED:
         {
-            int16_t x = DM.read(ac_pc + 2);
+            uint16_t x = DM.read(RB[REG_PC]);
+            std::cout << "@" << std::hex << x << std::endl;
             if(bw)
-                operand = DM.read_byte(RB[rsrc] + x);
+                operand = DM.read_byte(x);
             else
-                operand = DM.read(RB[rsrc] + x);
+                operand = DM.read(x);
             RB[REG_PC] += 2;
             break;
         }
@@ -96,7 +96,6 @@ static uint16_t doubleop_source(
             // Oops
             break;
     }
-    ac_pc = RB[REG_PC];
 
     return operand;
 }
@@ -104,7 +103,6 @@ static uint16_t doubleop_source(
 static uint16_t doubleop_dest_operand(
     ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
-    const ac_reg<unsigned> &ac_pc,
     uint16_t ad, uint16_t bw, uint16_t rdst)
 {
     switch(ad)
@@ -114,11 +112,11 @@ static uint16_t doubleop_dest_operand(
 
         case AM_INDEXED:
         {
-            int16_t x = DM.read(ac_pc + 2);
+            uint16_t x = DM.read(RB[REG_PC]);
             if(bw)
-                return DM.read_byte(RB[rdst] + x);
+                return DM.read_byte(x);
             else
-                return DM.read(RB[rdst] + x);
+                return DM.read(x);
         }
 
         default:
@@ -131,23 +129,26 @@ static uint16_t doubleop_dest_operand(
 static void doubleop_dest(
     ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
-    ac_reg<unsigned> &ac_pc,
     uint16_t operand,
     uint16_t ad, uint16_t bw, uint16_t rdst)
 {
+    std::cout << " -> ";
+
     switch(ad)
     {
         case AM_REGISTER:
+            std::cout << "r" << std::dec << rdst;
             RB[rdst] = operand;
             break;
 
         case AM_INDEXED:
         {
-            int16_t x = DM.read(ac_pc + 2);
+            uint16_t x = DM.read(RB[REG_PC]);
+            std::cout << std::hex << x;
             if(bw)
-                DM.write_byte(RB[rdst] + x, operand);
+                DM.write_byte(x, operand);
             else
-                DM.write(RB[rdst] + x, operand);
+                DM.write(x, operand);
             RB[REG_PC] += 2;
             break;
         }
@@ -156,7 +157,8 @@ static void doubleop_dest(
             // Oops
             break;
     }
-    ac_pc = RB[REG_PC];
+
+    std::cout << std::endl;
 }
 
 //!Behavior executed before simulation begins.
@@ -168,7 +170,10 @@ void ac_behavior( end ){}
 //!Generic instruction behavior method.
 void ac_behavior( instruction )
 {
+    std::cout << std::endl;
     std::cout << "pc=" << std::hex << ac_pc << std::endl;
+    std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
+
     ac_pc += 2;
     RB[REG_PC] = ac_pc;
 }
@@ -182,68 +187,80 @@ void ac_behavior( Type_PushPopM ){}
 //!Instruction MOV behavior method.
 void ac_behavior( MOV )
 {
-    uint16_t operand = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
+    std::cout << "MOV" << std::endl
+              << " " << std::dec << "as=" << (int)as << std::endl
+              << " " << "ad=" << (int)ad << std::endl;
 
-    doubleop_dest(DM, RB, ac_pc, operand, ad, bw, rdst);
+    uint16_t operand = doubleop_source(DM, RB, as, bw, rsrc);
+
+    std::cout << " operand=" << std::hex << operand << std::endl;
+
+    doubleop_dest(DM, RB, operand, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction ADD behavior method.
 void ac_behavior( ADD )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
 
     operand_dst += operand_src;
 
-    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction ADDC behavior method.
 void ac_behavior( ADDC )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
     sr_flags_t sr(RB);
 
     operand_dst += operand_src + sr.C;
 
-    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction SUB behavior method.
 void ac_behavior( SUB )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
 
     operand_dst += ~operand_src + 1;
 
-    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction SUBC behavior method.
 void ac_behavior( SUBC )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
     sr_flags_t sr(RB);
 
     operand_dst += ~operand_src + sr.C;
 
-    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction CMP behavior method.
 void ac_behavior( CMP )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
     uint16_t tmp = operand_dst;
 
     operand_dst -= operand_src;
 
     // Do not change the value
-    doubleop_dest(DM, RB, ac_pc, tmp, ad, bw, rdst);
+    doubleop_dest(DM, RB, tmp, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction DADD behavior method.
@@ -255,58 +272,63 @@ void ac_behavior( DADD )
 //!Instruction BIT behavior method.
 void ac_behavior( BIT )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
     uint16_t tmp = operand_dst;
 
     operand_dst &= operand_src;
 
     // Do not change the value
-    doubleop_dest(DM, RB, ac_pc, tmp, ad, bw, rdst);
+    doubleop_dest(DM, RB, tmp, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction BIC behavior method.
 void ac_behavior( BIC )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
 
     operand_dst &= ~operand_src;
 
-    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction BIS behavior method.
 void ac_behavior( BIS )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
 
     operand_dst |= operand_src;
 
-    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction XOR behavior method.
 void ac_behavior( XOR )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
 
     operand_dst ^= operand_src;
 
-    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction AND behavior method.
 void ac_behavior( AND )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, ac_pc, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ac_pc, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
 
     operand_dst &= operand_src;
 
-    doubleop_dest(DM, RB, ac_pc, operand_dst, ad, bw, rdst);
+    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction RRC behavior method.
@@ -327,7 +349,7 @@ void ac_behavior( SWPB ){}
 //!Instruction CALL behavior method.
 void ac_behavior( CALL )
 {
-    uint16_t address = doubleop_source(DM, RB, ac_pc, ad, 0, rdst);
+    uint16_t address = doubleop_source(DM, RB, ad, 0, rdst);
     RB[REG_SP] -= 2;
     DM.write(RB[REG_SP], RB[REG_PC]);
     RB[REG_PC] = address;
@@ -352,6 +374,7 @@ void ac_behavior( JZ )
         RB[REG_PC] += signed_offset;
         // TODO: Check whether PC gets incremented by 2 at the end (should be true)
     }
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction JNZ behavior method.
@@ -426,6 +449,7 @@ void ac_behavior( PUSHPOPM )
             RB[rdst] = DM.read(RB[REG_SP]);
         }
     }
+    ac_pc = RB[REG_PC];
 
     std::cout << " after: SP=" << std::hex << RB[REG_SP] << std::endl
               << std::endl;
