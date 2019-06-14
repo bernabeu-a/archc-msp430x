@@ -245,7 +245,7 @@ void ac_behavior( MOV )
 
     uint16_t operand = doubleop_source(DM, RB, as, bw, rsrc);
 
-    std::cout << " operand=" << std::hex << operand << std::endl;
+    std::cout << std::hex << operand;
 
     doubleop_dest(DM, RB, operand, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -585,18 +585,22 @@ void ac_behavior( PUSHPOPM )
 
     if(!(subop & 0x2)) // PUSHM
     {
+        std::cout << " It's a pushm!" << std::endl;
         for(; n; --n, --rdst)
         {
-            DM.write(RB[REG_SP], RB[rdst]);
+            std::cout << "  r" << std::dec << rdst << std::endl;
             RB[REG_SP] -= 2;
+            DM.write(RB[REG_SP], RB[rdst]);
         }
     }
     else // POPM
     {
-        for(; n; --n, --rdst)
+        std::cout << " It's a popm!" << std::endl;
+        for(; n; --n, ++rdst)
         {
-            RB[REG_SP] += 2;
+            std::cout << "  r" << std::dec << rdst << std::endl;
             RB[rdst] = DM.read(RB[REG_SP]);
+            RB[REG_SP] += 2;
         }
     }
     ac_pc = RB[REG_PC];
