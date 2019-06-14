@@ -486,43 +486,87 @@ void ac_behavior( JZ )
 //!Instruction JNZ behavior method.
 void ac_behavior( JNZ )
 {
-    std::cerr << "oops (JNZ)" << std::endl;
+    sr_flags_t sr(RB);
+    if(!sr.Z)
+    {
+        int16_t signed_offset = 2 * u10_to_i16(offset);
+        RB[REG_PC] += signed_offset;
+        // TODO: Check whether PC gets incremented by 2 at the end (should be true)
+    }
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction JC behavior method.
 void ac_behavior( JC )
 {
-    std::cerr << "oops (JC)" << std::endl;
+    sr_flags_t sr(RB);
+    if(sr.C)
+    {
+        int16_t signed_offset = 2 * u10_to_i16(offset);
+        RB[REG_PC] += signed_offset;
+        // TODO: Check whether PC gets incremented by 2 at the end (should be true)
+    }
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction JNC behavior method.
 void ac_behavior( JNC )
 {
-    std::cerr << "oops (JNC)" << std::endl;
+    sr_flags_t sr(RB);
+    if(!sr.C)
+    {
+        int16_t signed_offset = 2 * u10_to_i16(offset);
+        RB[REG_PC] += signed_offset;
+        // TODO: Check whether PC gets incremented by 2 at the end (should be true)
+    }
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction JN behavior method.
 void ac_behavior( JN )
 {
-    std::cerr << "oops (JN)" << std::endl;
+    sr_flags_t sr(RB);
+    if(sr.N)
+    {
+        int16_t signed_offset = 2 * u10_to_i16(offset);
+        RB[REG_PC] += signed_offset;
+        // TODO: Check whether PC gets incremented by 2 at the end (should be true)
+    }
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction JGE behavior method.
 void ac_behavior( JGE )
 {
-    std::cerr << "oops (JGE)" << std::endl;
+    sr_flags_t sr(RB);
+    if(!(sr.N ^ sr.V))
+    {
+        int16_t signed_offset = 2 * u10_to_i16(offset);
+        RB[REG_PC] += signed_offset;
+        // TODO: Check whether PC gets incremented by 2 at the end (should be true)
+    }
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction JL behavior method.
 void ac_behavior( JL )
 {
-    std::cerr << "oops (JL)" << std::endl;
+    sr_flags_t sr(RB);
+    if(sr.N ^ sr.V)
+    {
+        int16_t signed_offset = 2 * u10_to_i16(offset);
+        RB[REG_PC] += signed_offset;
+        // TODO: Check whether PC gets incremented by 2 at the end (should be true)
+    }
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction JMP behavior method.
 void ac_behavior( JMP )
 {
-    std::cerr << "oops (JMP)" << std::endl;
+    int16_t signed_offset = 2 * u10_to_i16(offset);
+    RB[REG_PC] += signed_offset;
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction PUSHPOPM behavior method.
