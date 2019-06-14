@@ -92,6 +92,36 @@ enum addressing_mode_e
     AM_INVALID
 };
 
+static unsigned int negative16(uint16_t x)
+{
+    return x >> 15;
+}
+
+static unsigned int negative8(uint8_t x)
+{
+    return x >> 7;
+}
+
+static unsigned int carry16(uint32_t x)
+{
+    return x & (1 << 16);
+}
+
+static unsigned int carry8(uint32_t x)
+{
+    return x & (1 << 8);
+}
+
+static unsigned int overflow16(uint16_t op1, uint16_t op2, uint16_t result)
+{
+    return (~(op1 ^ op2) & (result ^ op1)) >> 15;
+}
+
+static unsigned int overflow8(uint8_t op1, uint8_t op2, uint8_t result)
+{
+    return (~(op1 ^ op2) & (result ^ op1)) >> 7;
+}
+
 static int16_t u10_to_i16(uint16_t u10)
 {
     uint16_t tmp = (u10 & 0x01ff);
@@ -256,8 +286,30 @@ void ac_behavior( ADD )
 {
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_tmp = operand_dst;
+    sr_flags_t sr(RB);
 
     operand_dst += operand_src;
+
+    sr.set_Z(operand_dst == 0);
+    if(bw)
+    {
+        sr.set_N(negative8(operand_dst));
+        sr.set_V(overflow8(operand_src, operand_tmp, operand_dst));
+    }
+    else
+    {
+        sr.set_N(negative16(operand_dst));
+        sr.set_V(overflow16(operand_src, operand_tmp, operand_dst));
+    }
+
+    uint32_t promoted_src = operand_src;
+    uint32_t promoted_dst = operand_tmp;
+    uint32_t promoted_result = promoted_src + promoted_dst;
+    if(bw)
+        sr.set_C(carry8(promoted_result));
+    else
+        sr.set_C(carry16(promoted_result));
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -322,18 +374,20 @@ void ac_behavior( CMP )
 {
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
-    uint16_t tmp = operand_dst;
+    uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
-    operand_dst -= operand_src;
+    operand_dst += ~operand_src + 1;
 
-    alu_value_u value = {.u = operand_dst};
-    sr.set_N(value.u >> 15);
-    sr.set_Z(value.u == 0);
+    alu_value_u value_src = {.u = operand_src};
+    alu_value_u value_tmp = {.u = operand_tmp};
+    alu_value_u value_dst = {.u = operand_dst};
+    sr.set_N(value_dst.u >> 15);
+    sr.set_Z(value_dst.u == 0);
     // TODO: C and V
 
     // Do not change the value
-    doubleop_dest(DM, RB, tmp, ad, bw, rdst);
+    doubleop_dest(DM, RB, operand_tmp, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 }
 
