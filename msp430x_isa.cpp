@@ -13,10 +13,13 @@ using namespace msp430x_parms;
 
 struct sr_flags_t
 {
+    // Never write to those fields firectly. Reading is fine.
     unsigned int V, SCG1, SCG0, OSCOFF, CPUOFF, GIE, N, Z, C;
+    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB;
 
     sr_flags_t(
-        ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB)
+        ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB):
+        RB(RB)
     {
         uint16_t sr = RB[REG_SR];
         V      = ((sr >> 8) & 1);
@@ -29,6 +32,55 @@ struct sr_flags_t
         Z      = ((sr >> 1) & 1);
         C      = ((sr     ) & 1);
     }
+
+    void set_V(unsigned int value)
+    {
+        V = (value ? 1 : 0);
+        update_register();
+    }
+
+    void set_N(unsigned int value)
+    {
+        N = (value ? 1 : 0);
+        update_register();
+    }
+
+    void set_Z(unsigned int value)
+    {
+        Z = (value ? 1 : 0);
+        update_register();
+    }
+
+    void set_C(unsigned int value)
+    {
+        C = (value ? 1 : 0);
+        update_register();
+    }
+
+    void set_GIE(unsigned int value)
+    {
+        GIE = (value ? 1 : 0);
+        update_register();
+    }
+
+    void update_register(void)
+    {
+        RB[REG_SR] = (V      << 8)
+                   | (SCG1   << 7)
+                   | (SCG0   << 6)
+                   | (OSCOFF << 5)
+                   | (CPUOFF << 4)
+                   | (GIE    << 3)
+                   | (N      << 2)
+                   | (Z      << 1)
+                   | (C          );
+    }
+};
+
+union alu_value_u
+{
+    uint16_t u;
+    int16_t i;
 };
 
 enum addressing_mode_e
@@ -220,6 +272,11 @@ void ac_behavior( ADDC )
 
     operand_dst += operand_src + sr.C;
 
+    alu_value_u value = {.u = operand_dst};
+    sr.set_N(value.u >> 15);
+    sr.set_Z(value.u == 0);
+    // TODO: C and V
+
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 }
@@ -229,8 +286,14 @@ void ac_behavior( SUB )
 {
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    sr_flags_t sr(RB);
 
     operand_dst += ~operand_src + 1;
+
+    alu_value_u value = {.u = operand_dst};
+    sr.set_N(value.u >> 15);
+    sr.set_Z(value.u == 0);
+    // TODO: C and V
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -245,6 +308,11 @@ void ac_behavior( SUBC )
 
     operand_dst += ~operand_src + sr.C;
 
+    alu_value_u value = {.u = operand_dst};
+    sr.set_N(value.u >> 15);
+    sr.set_Z(value.u == 0);
+    // TODO: C and V
+
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 }
@@ -255,8 +323,14 @@ void ac_behavior( CMP )
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
     uint16_t tmp = operand_dst;
+    sr_flags_t sr(RB);
 
     operand_dst -= operand_src;
+
+    alu_value_u value = {.u = operand_dst};
+    sr.set_N(value.u >> 15);
+    sr.set_Z(value.u == 0);
+    // TODO: C and V
 
     // Do not change the value
     doubleop_dest(DM, RB, tmp, ad, bw, rdst);
@@ -275,8 +349,14 @@ void ac_behavior( BIT )
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
     uint16_t tmp = operand_dst;
+    sr_flags_t sr(RB);
 
     operand_dst &= operand_src;
+
+    alu_value_u value = {.u = operand_dst};
+    sr.set_N(value.u >> 15);
+    sr.set_Z(value.u == 0);
+    sr.set_C(value.u != 0);
 
     // Do not change the value
     doubleop_dest(DM, RB, tmp, ad, bw, rdst);
@@ -312,8 +392,15 @@ void ac_behavior( XOR )
 {
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    sr_flags_t sr(RB);
 
     operand_dst ^= operand_src;
+
+    alu_value_u value = {.u = operand_dst};
+    sr.set_N(value.u >> 15);
+    sr.set_Z(value.u == 0);
+    sr.set_C(value.u != 0);
+    // TODO: V
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -324,8 +411,15 @@ void ac_behavior( AND )
 {
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    sr_flags_t sr(RB);
 
     operand_dst &= operand_src;
+
+    alu_value_u value = {.u = operand_dst};
+    sr.set_N(value.u >> 15);
+    sr.set_Z(value.u == 0);
+    sr.set_C(value.u != 0);
+    // TODO: V
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
