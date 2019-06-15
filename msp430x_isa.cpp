@@ -265,6 +265,7 @@ void ac_behavior( Type_DoubleOp ) {}
 void ac_behavior( Type_SimpleOp ) {}
 void ac_behavior( Type_Jump ) {}
 void ac_behavior( Type_PushPopM ){}
+void ac_behavior( Type_Extension ){}
  
 //!Instruction MOV behavior method.
 void ac_behavior( MOV )
@@ -738,5 +739,11 @@ void ac_behavior( PUSHPOPM )
 
     std::cout << " after: SP=" << std::hex << RB[REG_SP] << std::endl
               << std::endl;
+}
+
+//!Instruction EXT behavior method.
+void ac_behavior( EXT )
+{
+    std::cout << "oops (EXTENSION)" << std::endl;
 }
 
