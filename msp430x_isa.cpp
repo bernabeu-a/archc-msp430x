@@ -320,14 +320,30 @@ void ac_behavior( ADDC )
 {
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
     operand_dst += operand_src + sr.C;
 
-    alu_value_u value = {.u = operand_dst};
-    sr.set_N(value.u >> 15);
-    sr.set_Z(value.u == 0);
-    // TODO: C and V
+    sr.set_Z(operand_dst == 0);
+    if(bw)
+    {
+        sr.set_N(negative8(operand_dst));
+        sr.set_V(overflow8(operand_src, operand_tmp, operand_dst));
+    }
+    else
+    {
+        sr.set_N(negative16(operand_dst));
+        sr.set_V(overflow16(operand_src, operand_tmp, operand_dst));
+    }
+
+    uint32_t promoted_src = operand_src + sr.C;
+    uint32_t promoted_dst = operand_tmp;
+    uint32_t promoted_result = promoted_src + promoted_dst;
+    if(bw)
+        sr.set_C(carry8(promoted_result));
+    else
+        sr.set_C(carry16(promoted_result));
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -338,14 +354,30 @@ void ac_behavior( SUB )
 {
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
     operand_dst += ~operand_src + 1;
 
-    alu_value_u value = {.u = operand_dst};
-    sr.set_N(value.u >> 15);
-    sr.set_Z(value.u == 0);
-    // TODO: C and V
+    sr.set_Z(operand_dst == 0);
+    if(bw)
+    {
+        sr.set_N(negative8(operand_dst));
+        sr.set_V(overflow8(operand_src, operand_tmp, operand_dst));
+    }
+    else
+    {
+        sr.set_N(negative16(operand_dst));
+        sr.set_V(overflow16(operand_src, operand_tmp, operand_dst));
+    }
+
+    uint32_t promoted_src = ~operand_src + 1;
+    uint32_t promoted_dst = operand_tmp;
+    uint32_t promoted_result = promoted_src + promoted_dst;
+    if(bw)
+        sr.set_C(carry8(promoted_result));
+    else
+        sr.set_C(carry16(promoted_result));
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -356,14 +388,30 @@ void ac_behavior( SUBC )
 {
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
     operand_dst += ~operand_src + sr.C;
 
-    alu_value_u value = {.u = operand_dst};
-    sr.set_N(value.u >> 15);
-    sr.set_Z(value.u == 0);
-    // TODO: C and V
+    sr.set_Z(operand_dst == 0);
+    if(bw)
+    {
+        sr.set_N(negative8(operand_dst));
+        sr.set_V(overflow8(operand_src, operand_tmp, operand_dst));
+    }
+    else
+    {
+        sr.set_N(negative16(operand_dst));
+        sr.set_V(overflow16(operand_src, operand_tmp, operand_dst));
+    }
+
+    uint32_t promoted_src = ~operand_src + sr.C;
+    uint32_t promoted_dst = operand_tmp;
+    uint32_t promoted_result = promoted_src + promoted_dst;
+    if(bw)
+        sr.set_C(carry8(promoted_result));
+    else
+        sr.set_C(carry16(promoted_result));
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -379,12 +427,25 @@ void ac_behavior( CMP )
 
     operand_dst += ~operand_src + 1;
 
-    alu_value_u value_src = {.u = operand_src};
-    alu_value_u value_tmp = {.u = operand_tmp};
-    alu_value_u value_dst = {.u = operand_dst};
-    sr.set_N(value_dst.u >> 15);
-    sr.set_Z(value_dst.u == 0);
-    // TODO: C and V
+    sr.set_Z(operand_dst == 0);
+    if(bw)
+    {
+        sr.set_N(negative8(operand_dst));
+        sr.set_V(overflow8(operand_src, operand_tmp, operand_dst));
+    }
+    else
+    {
+        sr.set_N(negative16(operand_dst));
+        sr.set_V(overflow16(operand_src, operand_tmp, operand_dst));
+    }
+
+    uint32_t promoted_src = ~operand_src + 1;
+    uint32_t promoted_dst = operand_tmp;
+    uint32_t promoted_result = promoted_src + promoted_dst;
+    if(bw)
+        sr.set_C(carry8(promoted_result));
+    else
+        sr.set_C(carry16(promoted_result));
 
     // Do not change the value
     doubleop_dest(DM, RB, operand_tmp, ad, bw, rdst);
@@ -407,10 +468,13 @@ void ac_behavior( BIT )
 
     operand_dst &= operand_src;
 
-    alu_value_u value = {.u = operand_dst};
-    sr.set_N(value.u >> 15);
-    sr.set_Z(value.u == 0);
-    sr.set_C(value.u != 0);
+    sr.set_Z(operand_dst == 0);
+    sr.set_C(operand_dst != 0);
+    sr.set_V(0);
+    if(bw)
+        sr.set_N(negative8(operand_dst));
+    else
+        sr.set_N(negative16(operand_dst));
 
     // Do not change the value
     doubleop_dest(DM, RB, tmp, ad, bw, rdst);
@@ -446,15 +510,23 @@ void ac_behavior( XOR )
 {
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
     operand_dst ^= operand_src;
 
-    alu_value_u value = {.u = operand_dst};
-    sr.set_N(value.u >> 15);
-    sr.set_Z(value.u == 0);
-    sr.set_C(value.u != 0);
-    // TODO: V
+    sr.set_Z(operand_dst == 0);
+    sr.set_C(operand_dst != 0);
+    if(bw)
+    {
+        sr.set_N(negative8(operand_dst));
+        sr.set_V(negative8(operand_src) && negative8(operand_tmp));
+    }
+    else
+    {
+        sr.set_N(negative16(operand_dst));
+        sr.set_V(negative16(operand_src) && negative16(operand_tmp));
+    }
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -469,11 +541,13 @@ void ac_behavior( AND )
 
     operand_dst &= operand_src;
 
-    alu_value_u value = {.u = operand_dst};
-    sr.set_N(value.u >> 15);
-    sr.set_Z(value.u == 0);
-    sr.set_C(value.u != 0);
-    // TODO: V
+    sr.set_Z(operand_dst == 0);
+    sr.set_C(operand_dst != 0);
+    sr.set_V(0);
+    if(bw)
+        sr.set_N(negative8(operand_dst));
+    else
+        sr.set_N(negative16(operand_dst));
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -498,7 +572,10 @@ void ac_behavior( PUSH )
 }
 
 //!Instruction SWPB behavior method.
-void ac_behavior( SWPB ){}
+void ac_behavior( SWPB )
+{
+    std::cerr << "oops (SWPB)" << std::endl;
+}
 
 //!Instruction CALL behavior method.
 void ac_behavior( CALL )
