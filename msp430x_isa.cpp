@@ -4,9 +4,11 @@
 #include  "msp430x_isa_init.cpp"
 #include  "msp430x_bhv_macros.H"
 
-#define REG_PC 0
-#define REG_SP 1
-#define REG_SR 2
+#define REG_PC  0
+#define REG_SP  1
+#define REG_SR  2
+#define REG_CG1 REG_SR
+#define REG_CG2 3
 
 //!'using namespace' statement to allow access to all msp430x-specific datatypes
 using namespace msp430x_parms;
@@ -140,38 +142,56 @@ static uint16_t doubleop_source(
     switch(as)
     {
         case AM_REGISTER:
-            operand = RB[rsrc];
-            if(bw)
-                operand &= 0xff;
+            if(rsrc == REG_CG2)
+                operand = 0;
+            else
+            {
+                operand = RB[rsrc];
+                if(bw)
+                    operand &= 0xff;
+            }
             break;
 
         case AM_INDEXED:
-        {
-            uint16_t x = DM.read(RB[REG_PC]);
-            std::cout << "@" << std::hex << x << std::endl;
-            if(bw)
-                operand = DM.read_byte(x);
+            if(rsrc == REG_CG2)
+                operand = 0x1;
             else
-                operand = DM.read(x);
-            RB[REG_PC] += 2;
+            {
+                uint16_t x = DM.read(RB[REG_PC]);
+                std::cout << "@" << std::hex << x << std::endl;
+                if(bw)
+                    operand = DM.read_byte(x);
+                else
+                    operand = DM.read(x);
+                RB[REG_PC] += 2;
+            }
             break;
-        }
 
         case AM_INDIRECT_REG:
-            if(bw)
-                operand = DM.read_byte(RB[rsrc]);
+            if(rsrc == REG_CG2)
+                operand = 0x2;
             else
-                operand = DM.read(RB[rsrc]);
+            {
+                if(bw)
+                    operand = DM.read_byte(RB[rsrc]);
+                else
+                    operand = DM.read(RB[rsrc]);
+            }
             break;
 
         case AM_INDIRECT_INCR:
-            operand = DM.read(RB[rsrc]);
-            // /!\ Here, pc may change if rsrc==0, which is the expected behavior
-            // TODO: 20bit address mode?
-            if(rsrc == REG_PC || !bw)
-                RB[rsrc] += 2;
+            if(rsrc == REG_CG2)
+                operand = 0xffff;
             else
-                RB[rsrc] += 1;
+            {
+                operand = DM.read(RB[rsrc]);
+                // /!\ Here, pc may change if rsrc==0, which is the expected behavior
+                // TODO: 20bit address mode?
+                if(rsrc == REG_PC || !bw)
+                    RB[rsrc] += 2;
+                else
+                    RB[rsrc] += 1;
+            }
             break;
 
         default:
