@@ -18,7 +18,7 @@ AC_ISA(msp430x){
     "%op:6 %subop:2 %n1:4 %rdst1:4";
 
   ac_format Type_Extension =
-    "%op:5 %_reserved0:2 %zc:1 %rep:1 %al:1 %_reserved1:2 %count:4";
+    "%op:5 %payload_h:4 %al:1 %payload_l:6";
 
   // MSP430
   ac_instr<Type_DoubleOp> MOV, ADD, ADDC, SUB, SUBC, CMP, DADD, BIT, BIC, BIS, XOR, AND;

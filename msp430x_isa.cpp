@@ -79,6 +79,20 @@ struct sr_flags_t
     }
 };
 
+enum extension_state_e
+{
+    EXT_NONE,
+    EXT_RDY,
+    EXT_RUN,
+    EXT_ERROR
+};
+
+struct extension_t
+{
+    uint16_t payload_h, payload_l, al;
+    extension_state_e state;
+};
+
 union alu_value_u
 {
     uint16_t u;
@@ -93,6 +107,8 @@ enum addressing_mode_e
     AM_INDIRECT_INCR = 3,
     AM_INVALID
 };
+
+static extension_t extension = {.state = EXT_NONE};
 
 static unsigned int negative16(uint16_t x)
 {
@@ -263,6 +279,25 @@ static void doubleop_dest(
     std::cout << std::endl;
 }
 
+static void extension_to_repeat(
+    const extension_t &extension,
+    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
+    uint16_t &zc,
+    uint16_t &al,
+    uint16_t &count)
+{
+    zc = (extension.payload_h >> 1) & 1;
+    al = extension.al;
+
+    if(extension.payload_h & 1) // #
+    {
+        uint16_t rn = extension.payload_l & 0xf;
+        count = 1 + (RB[rn] & 0xf);
+    }
+    else
+        count = 1 + (extension.payload_l & 0xf);
+}
+
 //!Behavior executed before simulation begins.
 void ac_behavior( begin ){}
 
@@ -272,6 +307,20 @@ void ac_behavior( end ){}
 //!Generic instruction behavior method.
 void ac_behavior( instruction )
 {
+    switch(extension.state)
+    {
+        case EXT_RDY:
+            extension.state = EXT_RUN;
+            break;
+
+        case EXT_RUN:
+            extension.state = EXT_ERROR;
+            break;
+
+        default:
+            break;
+    }
+
     std::cout << std::endl;
     std::cout << "pc=" << std::hex << ac_pc << std::endl;
     std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
@@ -305,12 +354,30 @@ void ac_behavior( MOV )
 //!Instruction ADD behavior method.
 void ac_behavior( ADD )
 {
+    uint16_t zc = 0;
+    uint16_t al = 1;
+    uint16_t count = 1;
+
+    if(extension.state == EXT_RUN)
+    {
+        std::cout << "Extended ADD" << std::endl;
+
+        if(as == 0 && ad == 0)
+        {
+            extension_to_repeat(extension, RB, zc, al, count);
+            std::cout << " " << std::dec << count << " times" << std::endl;
+        }
+        else
+            std::cerr << "Oops, extension not supported yet." << std::endl;
+    }
+
     uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
-    operand_dst += operand_src;
+    for(size_t i = count; i--; )
+        operand_dst += operand_src;
 
     sr.set_Z(operand_dst == 0);
     if(bw)
@@ -334,6 +401,7 @@ void ac_behavior( ADD )
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+    extension.state = EXT_NONE;
 }
 
 //!Instruction ADDC behavior method.
@@ -764,6 +832,13 @@ void ac_behavior( PUSHPOPM )
 //!Instruction EXT behavior method.
 void ac_behavior( EXT )
 {
-    std::cout << "oops (EXTENSION)" << std::endl;
+    extension.payload_h = payload_h;
+    extension.payload_l = payload_l;
+    extension.al        = al;
+    if(extension.state != EXT_NONE)
+        std::cerr << "Bad extension state (Oops)" << std::endl;
+    extension.state = EXT_RDY;
+
+    std::cout << "Extension!" << std::endl;
 }
 
