@@ -91,6 +91,22 @@ struct extension_t
 {
     uint16_t payload_h, payload_l, al;
     extension_state_e state;
+
+    extension_t():
+        state(EXT_NONE)
+    {
+    }
+
+    void tick()
+    {
+        if(state == EXT_RDY)
+            state = EXT_RUN;
+        else if(state == EXT_RUN)
+        {
+            state = EXT_ERROR;
+            std::cerr << "Extension state error (Oops)" << std::endl;
+        }
+    }
 };
 
 union alu_value_u
@@ -108,7 +124,7 @@ enum addressing_mode_e
     AM_INVALID
 };
 
-static extension_t extension = {.state = EXT_NONE};
+static extension_t extension;
 
 static unsigned int negative16(uint16_t x)
 {
@@ -307,19 +323,7 @@ void ac_behavior( end ){}
 //!Generic instruction behavior method.
 void ac_behavior( instruction )
 {
-    switch(extension.state)
-    {
-        case EXT_RDY:
-            extension.state = EXT_RUN;
-            break;
-
-        case EXT_RUN:
-            extension.state = EXT_ERROR;
-            break;
-
-        default:
-            break;
-    }
+    extension.tick();
 
     std::cout << std::endl;
     std::cout << "pc=" << std::hex << ac_pc << std::endl;
