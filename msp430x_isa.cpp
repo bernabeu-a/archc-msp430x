@@ -4,6 +4,8 @@
 #include  "msp430x_isa_init.cpp"
 #include  "msp430x_bhv_macros.H"
 
+#include "sytare-syscalls/syscalls.h"
+
 #define REG_PC  0
 #define REG_SP  1
 #define REG_SR  2
@@ -125,6 +127,7 @@ enum addressing_mode_e
 };
 
 static extension_t extension;
+static Syscalls *syscalls;
 
 static unsigned int negative16(uint16_t x)
 {
@@ -326,10 +329,17 @@ static void extension_to_repeat(
 }
 
 //!Behavior executed before simulation begins.
-void ac_behavior( begin ){}
+void ac_behavior( begin )
+{
+    syscalls = new Syscalls();
+    syscalls->print();
+}
 
 //!Behavior executed after simulation ends.
-void ac_behavior( end ){}
+void ac_behavior( end )
+{
+    delete syscalls;
+}
 
 //!Generic instruction behavior method.
 void ac_behavior( instruction )
@@ -685,12 +695,20 @@ void ac_behavior( SWPB )
 void ac_behavior( CALL )
 {
     uint16_t address = doubleop_source(DM, RB, ad, 0, rdst);
-    RB[REG_SP] -= 2;
-    DM.write(RB[REG_SP], RB[REG_PC]);
-    RB[REG_PC] = address;
-    ac_pc = RB[REG_PC];
+    if(syscalls->is_syscall(address)) // Syscall: run symbolically
+    {
+        std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
+        // TODO
+    }
+    else // Actually run the call
+    {
+        RB[REG_SP] -= 2;
+        DM.write(RB[REG_SP], RB[REG_PC]);
+        RB[REG_PC] = address;
+        ac_pc = RB[REG_PC];
 
-    printf("CALL:\n Rdst=%d\n Ad=%d\n\n", rdst, ad);
+        printf("CALL:\n Rdst=%d\n Ad=%d\n\n", rdst, ad);
+    }
 }
 
 //!Instruction RETI behavior method.

@@ -20,3 +20,13 @@ void Syscalls::print() const
         std::cout << std::hex << it.first << " -> " << it.second << std::endl;
 }
 
+bool Syscalls::is_syscall(uint16_t address) const
+{
+    return functions.find(address) != functions.cend();
+}
+
+std::string Syscalls::get_name(uint16_t address) const
+{
+    return functions.find(address)->second;
+}
+
