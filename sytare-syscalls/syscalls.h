@@ -9,6 +9,10 @@ class Syscalls
         Syscalls();
 
         void print() const;
+        bool is_syscall(uint16_t address) const;
+
+        // precondition: is_syscall(address) == true
+        std::string get_name(uint16_t address) const;
 
     private:
         elf_functions_t functions;
