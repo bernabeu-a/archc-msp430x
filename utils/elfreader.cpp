@@ -20,7 +20,7 @@ elf_functions_t read_functions_from_elf(const std::string &elf_filename, const e
 {
     elf_functions_t ret;
     std::ostringstream command;
-    command << "readelf -Ws " << elf_filename << " | grep FUNC | awk '{print $2, $8;}'";
+    command << "readelf -Ws \"" << elf_filename << "\" | awk '$4==\"FUNC\" {print $2, $8;}'";
 
     FILE *fp = popen(command.str().c_str(), "r");
     if(fp != NULL)
@@ -50,7 +50,6 @@ elf_functions_t read_functions_from_elf(const std::string &elf_filename, const e
 elf_functions_t read_functions_from_args(int , char **, const elf_wl_functions_t &whitelist)
 {
     extern char *appfilename;
-    std::cout << appfilename << std::endl;
     return read_functions_from_elf(appfilename, whitelist);
 }
 
