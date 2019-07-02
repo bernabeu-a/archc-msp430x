@@ -51,6 +51,10 @@ main.cpp:
 msp430x_syscall.H:
 	cp msp430x_syscall.H.tmpl msp430x_syscall.H
 
+# Copy from template if msp430x_syscall.cpp not exist
+msp430x_syscall.cpp:
+	cp msp430x_syscall.cpp.tmpl msp430x_syscall.cpp
+
 .cpp.o:
 	$(CC) $(CFLAGS) $(INC_DIR) -c $< -o $@
 
