@@ -387,8 +387,6 @@ void ac_behavior( instruction )
 
     ac_pc += 2;
     RB[REG_PC] = ac_pc;
-
-    std::cout << "Cycles: " << std::dec << cycles << std::endl;
 }
  
 //! Instruction Format behavior methods.
@@ -761,6 +759,13 @@ void ac_behavior( CALL )
     }
 
     ac_pc = RB[REG_PC];
+
+    if(ad == AM_REGISTER)
+        cycles += 4;
+    else if(rdst == REG_SR)
+        cycles += 6;
+    else
+        cycles += 5;
 }
 
 //!Instruction RETI behavior method.
@@ -786,6 +791,8 @@ void ac_behavior( JZ )
         // TODO: Check whether PC gets incremented by 2 at the end (should be true)
     }
     ac_pc = RB[REG_PC];
+
+    cycles += 2;
 }
 
 //!Instruction JNZ behavior method.
@@ -799,6 +806,8 @@ void ac_behavior( JNZ )
         // TODO: Check whether PC gets incremented by 2 at the end (should be true)
     }
     ac_pc = RB[REG_PC];
+
+    cycles += 2;
 }
 
 //!Instruction JC behavior method.
@@ -812,6 +821,8 @@ void ac_behavior( JC )
         // TODO: Check whether PC gets incremented by 2 at the end (should be true)
     }
     ac_pc = RB[REG_PC];
+
+    cycles += 2;
 }
 
 //!Instruction JNC behavior method.
@@ -825,6 +836,8 @@ void ac_behavior( JNC )
         // TODO: Check whether PC gets incremented by 2 at the end (should be true)
     }
     ac_pc = RB[REG_PC];
+
+    cycles += 2;
 }
 
 //!Instruction JN behavior method.
@@ -838,6 +851,8 @@ void ac_behavior( JN )
         // TODO: Check whether PC gets incremented by 2 at the end (should be true)
     }
     ac_pc = RB[REG_PC];
+
+    cycles += 2;
 }
 
 //!Instruction JGE behavior method.
@@ -851,6 +866,8 @@ void ac_behavior( JGE )
         // TODO: Check whether PC gets incremented by 2 at the end (should be true)
     }
     ac_pc = RB[REG_PC];
+
+    cycles += 2;
 }
 
 //!Instruction JL behavior method.
@@ -864,6 +881,8 @@ void ac_behavior( JL )
         // TODO: Check whether PC gets incremented by 2 at the end (should be true)
     }
     ac_pc = RB[REG_PC];
+
+    cycles += 2;
 }
 
 //!Instruction JMP behavior method.
@@ -872,6 +891,8 @@ void ac_behavior( JMP )
     int16_t signed_offset = 2 * u10_to_i16(offset);
     RB[REG_PC] += signed_offset;
     ac_pc = RB[REG_PC];
+
+    cycles += 2;
 }
 
 //!Instruction PUSHPOPM behavior method.
@@ -912,6 +933,8 @@ void ac_behavior( PUSHPOPM )
 
     std::cout << " after: SP=" << std::hex << RB[REG_SP] << std::endl
               << std::endl;
+
+    cycles += 3 + n1;
 }
 
 //!Instruction EXT behavior method.
