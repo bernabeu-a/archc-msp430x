@@ -187,6 +187,13 @@ static uint16_t doubleop_source(
         case AM_INDEXED:
             if(rsrc == REG_CG2)
                 operand = 0x1;
+            /*
+            else if(rsrc == REG_CG1)
+            {
+                operand = DM.read(RB[rsrc]);
+                std::cerr << "Oops As=1, src=r2" << std::endl;
+            }
+            */
             else
             {
                 uint16_t x = DM.read(RB[REG_PC]);
@@ -202,6 +209,8 @@ static uint16_t doubleop_source(
         case AM_INDIRECT_REG:
             if(rsrc == REG_CG2)
                 operand = 0x2;
+            else if(rsrc == REG_CG1)
+                operand = 0x4;
             else
             {
                 if(bw)
@@ -214,6 +223,8 @@ static uint16_t doubleop_source(
         case AM_INDIRECT_INCR:
             if(rsrc == REG_CG2)
                 operand = 0xffff;
+            else if(rsrc == REG_CG1)
+                operand = 0x8;
             else
             {
                 operand = DM.read(RB[rsrc]);
