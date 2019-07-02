@@ -27,7 +27,7 @@ ACHEAD := $(TARGET)_parms.H $(TARGET)_arch.H $(TARGET)_arch_ref.H $(TARGET)_isa.
 # They are stored in the archc/lib directory
 ACLIBFILES := ac_decoder_rt.o ac_module.o ac_mem.o ac_utils.o ac_hltrace.o ac_syscall.o 
 
-ADDITIONAL_SRC = sytare-syscalls/syscalls.cpp utils/elfreader.cpp
+ADDITIONAL_SRC = sytare-syscalls/syscalls.cpp sytare-syscalls/peripherals.cpp utils/elfreader.cpp
 
 # These are the source files provided by the user + ArchC sources
 SRCS := main.cpp $(ACSRCS)  $(TARGET)_syscall.cpp $(ADDITIONAL_SRC)

@@ -687,7 +687,7 @@ void ac_behavior( CALL )
     if(syscalls->is_syscall(address)) // Syscall: run symbolically
     {
         std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
-        // TODO
+        syscalls->run(address);
     }
     else // Actually run the call
     {
