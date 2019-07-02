@@ -705,10 +705,11 @@ void ac_behavior( CALL )
         RB[REG_SP] -= 2;
         DM.write(RB[REG_SP], RB[REG_PC]);
         RB[REG_PC] = address;
-        ac_pc = RB[REG_PC];
 
         printf("CALL:\n Rdst=%d\n Ad=%d\n\n", rdst, ad);
     }
+
+    ac_pc = RB[REG_PC];
 }
 
 //!Instruction RETI behavior method.
