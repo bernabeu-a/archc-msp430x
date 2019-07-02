@@ -128,6 +128,7 @@ enum addressing_mode_e
 
 static extension_t extension;
 static Syscalls *syscalls;
+static size_t cycles;
 
 static unsigned int negative16(uint16_t x)
 {
@@ -200,7 +201,6 @@ static uint16_t doubleop_source(
             else
             {
                 uint16_t x = DM.read(RB[REG_PC]);
-                std::cout << "@" << std::hex << x << std::endl;
                 if(bw)
                     operand = DM.read_byte(x);
                 else
@@ -303,6 +303,45 @@ static void doubleop_dest(
     }
 }
 
+static size_t doubleop_cycles(uint8_t as, uint8_t ad, uint8_t rsrc, uint8_t rdst, bool shorter)
+{
+    switch(as)
+    {
+        case AM_REGISTER: // src = Rn
+            if(ad == AM_REGISTER) // dst = Rm or dst = PC
+                return rdst == REG_PC ? 3 : 1;
+            return shorter ? 3 : 4;
+
+        case AM_INDEXED: // src = ADDR or src = &ADDR or src = X(Rn)
+            if(ad == AM_REGISTER) // dst = Rm or dst = PC
+                return rdst == REG_PC ? 5 : 3;
+            return shorter ? 5 : 6;
+
+        case AM_INDIRECT_REG: // src = @Rn
+            if(ad == AM_REGISTER) // dst = Rm or dst = PC
+                return rdst == REG_PC ? 4 : 2;
+            return shorter ? 4 : 5;
+
+        case AM_INDIRECT_INCR:
+            if(rsrc == REG_PC) // src = #N
+            {
+                if(ad == AM_REGISTER) // dst = Rm or dst = PC
+                    return rdst == REG_PC ? 3 : 2;
+            }
+            else // src = @Rn+
+            {
+                if(ad == AM_REGISTER) // dst = Rm or dst = PC
+                    return rdst == REG_PC ? 4 : 2;
+            }
+            return shorter ? 4 : 5;
+
+        default:
+            // Oops
+            break;
+    }
+    return 0;
+}
+
 static void extension_to_repeat(
     const extension_t &extension,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
@@ -327,6 +366,8 @@ void ac_behavior( begin )
 {
     syscalls = new Syscalls();
     syscalls->print();
+
+    cycles = 0;
 }
 
 //!Behavior executed after simulation ends.
@@ -346,6 +387,8 @@ void ac_behavior( instruction )
 
     ac_pc += 2;
     RB[REG_PC] = ac_pc;
+
+    std::cout << "Cycles: " << std::dec << cycles << std::endl;
 }
  
 //! Instruction Format behavior methods.
@@ -362,6 +405,8 @@ void ac_behavior( MOV )
 
     doubleop_dest(DM, RB, operand, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, true);
 }
 
 //!Instruction ADD behavior method.
@@ -415,6 +460,8 @@ void ac_behavior( ADD )
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
     extension.state = EXT_NONE;
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
 }
 
 //!Instruction ADDC behavior method.
@@ -449,6 +496,8 @@ void ac_behavior( ADDC )
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
 }
 
 //!Instruction SUB behavior method.
@@ -483,6 +532,8 @@ void ac_behavior( SUB )
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
 }
 
 //!Instruction SUBC behavior method.
@@ -517,6 +568,8 @@ void ac_behavior( SUBC )
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
 }
 
 //!Instruction CMP behavior method.
@@ -552,6 +605,8 @@ void ac_behavior( CMP )
     // Do not change the value
     doubleop_dest(DM, RB, operand_tmp, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, true);
 }
 
 //!Instruction DADD behavior method.
@@ -581,6 +636,8 @@ void ac_behavior( BIT )
     // Do not change the value
     doubleop_dest(DM, RB, tmp, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, true);
 }
 
 //!Instruction BIC behavior method.
@@ -593,6 +650,8 @@ void ac_behavior( BIC )
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
 }
 
 //!Instruction BIS behavior method.
@@ -605,6 +664,8 @@ void ac_behavior( BIS )
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
 }
 
 //!Instruction XOR behavior method.
@@ -632,6 +693,8 @@ void ac_behavior( XOR )
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
 }
 
 //!Instruction AND behavior method.
@@ -653,6 +716,8 @@ void ac_behavior( AND )
 
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
+
+    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
 }
 
 //!Instruction RRC behavior method.
