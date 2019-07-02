@@ -31,7 +31,10 @@ Leds::Leds():
 void Leds::on(uint8_t n)
 {
     if(check_initialized())
-        value |= (1 << n);
+    {
+        value |= (1 << (n-1));
+        std::cout << "New led value: " << std::dec << (int) value << std::endl;
+    }
 }
 
 void Leds::on()

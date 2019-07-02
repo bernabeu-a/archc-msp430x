@@ -280,19 +280,15 @@ static void doubleop_dest(
     uint16_t operand,
     uint16_t ad, uint16_t bw, uint16_t rdst)
 {
-    std::cout << " -> ";
-
     switch(ad)
     {
         case AM_REGISTER:
-            std::cout << "r" << std::dec << rdst;
             RB[rdst] = operand;
             break;
 
         case AM_INDEXED:
         {
             uint16_t x = DM.read(RB[REG_PC]);
-            std::cout << std::hex << x;
             if(bw)
                 DM.write_byte(x, operand);
             else
@@ -305,8 +301,6 @@ static void doubleop_dest(
             // Oops
             break;
     }
-
-    std::cout << std::endl;
 }
 
 static void extension_to_repeat(
@@ -346,9 +340,9 @@ void ac_behavior( instruction )
 {
     extension.tick();
 
-    std::cout << std::endl;
-    std::cout << "pc=" << std::hex << ac_pc << std::endl;
-    std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
+    //std::cout << std::endl;
+    //std::cout << "pc=" << std::hex << ac_pc << std::endl;
+    //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
 
     ac_pc += 2;
     RB[REG_PC] = ac_pc;
@@ -364,13 +358,7 @@ void ac_behavior( Type_Extension ){}
 //!Instruction MOV behavior method.
 void ac_behavior( MOV )
 {
-    std::cout << "MOV" << std::endl
-              << " " << std::dec << "as=" << (int)as << std::endl
-              << " " << "ad=" << (int)ad << std::endl;
-
     uint16_t operand = doubleop_source(DM, RB, as, bw, rsrc);
-
-    std::cout << std::hex << operand;
 
     doubleop_dest(DM, RB, operand, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -569,7 +557,7 @@ void ac_behavior( CMP )
 //!Instruction DADD behavior method.
 void ac_behavior( DADD )
 {
-    std::cerr << "oops (DADD)" << std::endl;
+    std::cerr << "Oops (DADD)" << std::endl;
 }
 
 //!Instruction BIT behavior method.
@@ -670,25 +658,25 @@ void ac_behavior( AND )
 //!Instruction RRC behavior method.
 void ac_behavior( RRC )
 {
-    std::cerr << "oops (RRC)" << std::endl;
+    std::cerr << "Oops (RRC)" << std::endl;
 }
 
 //!Instruction RRA behavior method.
 void ac_behavior( RRA )
 {
-    std::cerr << "oops (RRA)" << std::endl;
+    std::cerr << "Oops (RRA)" << std::endl;
 }
 
 //!Instruction PUSH behavior method.
 void ac_behavior( PUSH )
 {
-    std::cerr << "oops (PUSH)" << std::endl;
+    std::cerr << "Oops (PUSH)" << std::endl;
 }
 
 //!Instruction SWPB behavior method.
 void ac_behavior( SWPB )
 {
-    std::cerr << "oops (SWPB)" << std::endl;
+    std::cerr << "Oops (SWPB)" << std::endl;
 }
 
 //!Instruction CALL behavior method.
@@ -698,15 +686,13 @@ void ac_behavior( CALL )
     if(syscalls->is_syscall(address)) // Syscall: run symbolically
     {
         std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
-        syscalls->run(address);
+        syscalls->run(address, RB);
     }
     else // Actually run the call
     {
         RB[REG_SP] -= 2;
         DM.write(RB[REG_SP], RB[REG_PC]);
         RB[REG_PC] = address;
-
-        printf("CALL:\n Rdst=%d\n Ad=%d\n\n", rdst, ad);
     }
 
     ac_pc = RB[REG_PC];
@@ -715,13 +701,13 @@ void ac_behavior( CALL )
 //!Instruction RETI behavior method.
 void ac_behavior( RETI )
 {
-    std::cout << "oops (RETI)" << std::endl;
+    std::cout << "Oops (RETI)" << std::endl;
 }
 
 //!Instruction SXT behavior method.
 void ac_behavior( SXT )
 {
-    std::cout << "oops (SXT)" << std::endl;
+    std::cout << "Oops (SXT)" << std::endl;
 }
 
 //!Instruction JZ behavior method.

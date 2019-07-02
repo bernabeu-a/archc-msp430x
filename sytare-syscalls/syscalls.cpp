@@ -2,6 +2,8 @@
 
 #include "syscalls.h"
 
+#define REG_FIRST_PARAM 12
+
 static const elf_wl_functions_t whitelist{
     "leds_init",
     "led_on",
@@ -30,7 +32,10 @@ std::string Syscalls::get_name(uint16_t address) const
     return functions.find(address)->second;
 }
 
-void Syscalls::run(uint16_t address)
+void Syscalls::run(
+    uint16_t address,
+    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB
+)
 {
     std::string name = get_name(address);
     if(name == "leds_init")
@@ -40,10 +45,7 @@ void Syscalls::run(uint16_t address)
     else if(name == "leds_on")
         leds_on();
     else if(name == "led_on")
-    {
-        // TODO: param
-        led_on(0);
-    }
+        led_on(RB[REG_FIRST_PARAM]);
     else
     {
         std::cerr << "Oops: Unsupported syscall \"" << name << "\"" << std::endl;

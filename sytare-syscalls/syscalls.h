@@ -5,6 +5,7 @@
 
 #include "utils/elfreader.h"
 #include "peripherals.h"
+#include "msp430x_isa.H"
 
 class Syscalls
 {
@@ -18,7 +19,10 @@ class Syscalls
         std::string get_name(uint16_t address) const;
 
         // precondition: is_syscall(address) == true
-        void run(uint16_t address);
+        void run(
+            uint16_t address,
+            ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB
+        );
 
     private:
         // Leds
