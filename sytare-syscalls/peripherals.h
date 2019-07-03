@@ -19,6 +19,32 @@ class Peripheral
         bool initialized;
 };
 
+class Cpu: public Peripheral
+{
+    public:
+        Cpu();
+
+        virtual size_t current() const;
+
+        // syscalls
+        void active();
+        void lpm0();
+        void lpm1();
+        void lpm2();
+        void lpm3();
+        void lpm4();
+
+    private:
+        enum {
+            ACTIVE,
+            LPM0,
+            LPM1,
+            LPM2,
+            LPM3,
+            LPM4
+        } state;
+};
+
 class Leds: public Peripheral
 {
     public:
@@ -37,11 +63,12 @@ class Leds: public Peripheral
 
 struct platform_t
 {
+    Cpu cpu;
     Leds leds;
 
     size_t current() const
     {
-        return leds.current();
+        return cpu.current() + leds.current();
     }
 };
 

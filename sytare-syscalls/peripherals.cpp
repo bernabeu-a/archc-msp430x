@@ -21,6 +21,67 @@ bool Peripheral::check_initialized() const
     return initialized;
 }
 
+/******** Cpu  ********/
+
+Cpu::Cpu():
+    state(ACTIVE)
+{
+    init(); // Cpu is always initialized
+}
+
+size_t Cpu::current() const
+{
+    switch(state)
+    {
+        case LPM0:
+            return 779;
+
+        case LPM1:
+            return 732;
+
+        case LPM2:
+            return 561;
+
+        case LPM3:
+        case LPM4:
+            return 500;
+
+        default:
+            return 1864;
+    }
+}
+
+// syscalls
+void Cpu::active()
+{
+    state = ACTIVE;
+}
+
+void Cpu::lpm0()
+{
+    state = LPM0;
+}
+
+void Cpu::lpm1()
+{
+    state = LPM1;
+}
+
+void Cpu::lpm2()
+{
+    state = LPM2;
+}
+
+void Cpu::lpm3()
+{
+    state = LPM3;
+}
+
+void Cpu::lpm4()
+{
+    state = LPM4;
+}
+
 /******** Leds ********/
 
 Leds::Leds():
