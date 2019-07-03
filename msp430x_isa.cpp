@@ -382,7 +382,8 @@ void ac_behavior( instruction )
 {
     extension.tick();
 
-    std::cout << "> " << std::dec << cycles << ", " << platform.current() << std::endl;
+    if(platform.energy.is_measuring())
+        std::cout << "> " << std::dec << cycles << ", " << platform.current() << std::endl;
 
     //std::cout << std::endl;
     //std::cout << "pc=" << std::hex << ac_pc << std::endl;

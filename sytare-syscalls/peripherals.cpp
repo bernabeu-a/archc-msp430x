@@ -118,3 +118,48 @@ void Leds::off()
         value = 0x00;
 }
 
+/******** Energy ********/
+
+Energy::Energy():
+    measuring(false)
+{
+}
+
+size_t Energy::current() const
+{
+    return 0;
+}
+
+bool Energy::is_measuring() const
+{
+    return measuring;
+}
+
+void Energy::start()
+{
+    if(check_initialized())
+    {
+        if(measuring)
+            std::cerr << "Oops Energy::start called in wrong state" << std::endl;
+        else
+        {
+            measuring = true;
+            std::cout << "Energy start" << std::endl;
+        }
+    }
+}
+
+void Energy::stop()
+{
+    if(check_initialized())
+    {
+        if(!measuring)
+            std::cerr << "Oops Energy::stop called in wrong state" << std::endl;
+        else
+        {
+            measuring = false;
+            std::cout << "Energy stop" << std::endl;
+        }
+    }
+}
+

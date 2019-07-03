@@ -5,10 +5,17 @@
 #define REG_FIRST_PARAM 12
 
 static const elf_wl_functions_t whitelist{
+    // Leds
     "leds_init",
     "led_on",
     "leds_on",
-    "leds_off"
+    "leds_off",
+
+    // Energy
+    "energy_init",
+    "energy_reduce_consumption",
+    "energy_start_measurements",
+    "energy_stop_measurements"
 };
 
 Syscalls::Syscalls(platform_t &platform):
@@ -47,6 +54,14 @@ void Syscalls::run(
         leds_on();
     else if(name == "led_on")
         led_on(RB[REG_FIRST_PARAM]);
+    else if(name == "energy_init")
+        energy_init();
+    else if(name == "energy_reduce_consumption")
+        energy_reduce_consumption();
+    else if(name == "energy_start_measurements")
+        energy_start_measurements();
+    else if(name == "energy_stop_measurements")
+        energy_stop_measurements();
     else
     {
         std::cerr << "Oops: Unsupported syscall \"" << name << "\"" << std::endl;
@@ -71,5 +86,24 @@ void Syscalls::leds_on()
 void Syscalls::led_on(uint8_t n)
 {
     platform.leds.on(n);
+}
+
+void Syscalls::energy_init()
+{
+    platform.energy.init();
+}
+
+void Syscalls::energy_reduce_consumption()
+{
+}
+
+void Syscalls::energy_start_measurements()
+{
+    platform.energy.start();
+}
+
+void Syscalls::energy_stop_measurements()
+{
+    platform.energy.stop();
 }
 

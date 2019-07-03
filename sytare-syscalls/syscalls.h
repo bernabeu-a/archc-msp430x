@@ -31,6 +31,12 @@ class Syscalls
         void leds_on();
         void led_on(uint8_t n);
 
+        // Energy
+        void energy_init();
+        void energy_reduce_consumption();
+        void energy_start_measurements();
+        void energy_stop_measurements();
+
         elf_functions_t functions;
         platform_t &platform;
 };

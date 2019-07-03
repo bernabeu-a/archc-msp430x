@@ -61,10 +61,27 @@ class Leds: public Peripheral
         uint8_t value;
 };
 
+class Energy: public Peripheral
+{
+    public:
+        Energy();
+
+        virtual size_t current() const;
+        bool is_measuring() const;
+        
+        // syscalls
+        void start();
+        void stop();
+
+    private:
+        bool measuring;
+};
+
 struct platform_t
 {
     Cpu cpu;
     Leds leds;
+    Energy energy;
 
     size_t current() const
     {
