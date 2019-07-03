@@ -10,7 +10,7 @@
 class Syscalls
 {
     public:
-        Syscalls();
+        Syscalls(platform_t &platform);
 
         void print() const;
         bool is_syscall(uint16_t address) const;
@@ -32,7 +32,7 @@ class Syscalls
         void led_on(uint8_t n);
 
         elf_functions_t functions;
-        struct platform_t platform;
+        platform_t &platform;
 };
 
 #endif

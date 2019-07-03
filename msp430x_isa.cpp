@@ -127,6 +127,7 @@ enum addressing_mode_e
 };
 
 static extension_t extension;
+static platform_t platform;
 static Syscalls *syscalls;
 static size_t cycles;
 
@@ -364,7 +365,7 @@ static void extension_to_repeat(
 //!Behavior executed before simulation begins.
 void ac_behavior( begin )
 {
-    syscalls = new Syscalls();
+    syscalls = new Syscalls(platform);
     syscalls->print();
 
     cycles = 0;
@@ -380,6 +381,8 @@ void ac_behavior( end )
 void ac_behavior( instruction )
 {
     extension.tick();
+
+    std::cout << "> " << std::dec << cycles << ", " << platform.current() << std::endl;
 
     //std::cout << std::endl;
     //std::cout << "pc=" << std::hex << ac_pc << std::endl;

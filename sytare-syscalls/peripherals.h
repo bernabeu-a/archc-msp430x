@@ -11,6 +11,8 @@ class Peripheral
         // syscalls
         void init();
 
+        virtual size_t current() const = 0;
+
     protected:
         bool check_initialized() const;
 
@@ -21,6 +23,8 @@ class Leds: public Peripheral
 {
     public:
         Leds();
+
+        virtual size_t current() const;
         
         // syscalls
         void on(uint8_t n);
@@ -34,6 +38,11 @@ class Leds: public Peripheral
 struct platform_t
 {
     Leds leds;
+
+    size_t current() const
+    {
+        return leds.current();
+    }
 };
 
 #endif

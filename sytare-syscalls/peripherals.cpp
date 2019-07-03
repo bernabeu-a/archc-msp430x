@@ -28,6 +28,14 @@ Leds::Leds():
 {
 }
 
+size_t Leds::current() const
+{
+    size_t n = 0;
+    for(size_t i = 0; i < 8; ++i)
+        n += ((value >> i) & 1);
+    return n * 1236;
+}
+
 void Leds::on(uint8_t n)
 {
     if(check_initialized())

@@ -11,8 +11,9 @@ static const elf_wl_functions_t whitelist{
     "leds_off"
 };
 
-Syscalls::Syscalls():
-    functions(read_functions_from_args(0, nullptr, whitelist))
+Syscalls::Syscalls(platform_t &platform):
+    functions(read_functions_from_args(0, nullptr, whitelist)),
+    platform(platform)
 {
 }
 
