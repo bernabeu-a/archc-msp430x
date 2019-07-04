@@ -761,7 +761,15 @@ void ac_behavior( RRA )
 //!Instruction PUSH behavior method.
 void ac_behavior( PUSH )
 {
-    std::cerr << "Oops (PUSH)" << std::endl;
+    uint16_t operand = doubleop_source(DM, RB, ad, bw, rdst);
+    RB[REG_SP] -= 2;
+    if(bw)
+        DM.write_byte(RB[REG_SP], operand);
+    else
+        DM.write(RB[REG_SP], operand);
+    ac_pc = RB[REG_PC];
+
+    cycles += ESTIMATE_PIPELINE(ad == AM_REGISTER ? 3 : 4);
 }
 
 //!Instruction SWPB behavior method.
