@@ -131,6 +131,13 @@ static struct
     size_t current;
 } former_current_point;
 
+static inline size_t ESTIMATE_PIPELINE(size_t ncycles)
+{
+    if(ncycles)
+        return ncycles - 1;
+    return ncycles;
+}
+
 static unsigned int negative16(uint16_t x)
 {
     return x >> 15;
@@ -425,7 +432,7 @@ void ac_behavior( MOV )
     doubleop_dest(DM, RB, operand, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, true);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true));
 }
 
 //!Instruction ADD behavior method.
@@ -480,7 +487,7 @@ void ac_behavior( ADD )
     ac_pc = RB[REG_PC];
     extension.state = EXT_NONE;
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false));
 }
 
 //!Instruction ADDC behavior method.
@@ -516,7 +523,7 @@ void ac_behavior( ADDC )
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false));
 }
 
 //!Instruction SUB behavior method.
@@ -552,7 +559,7 @@ void ac_behavior( SUB )
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false));
 }
 
 //!Instruction SUBC behavior method.
@@ -588,7 +595,7 @@ void ac_behavior( SUBC )
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false));
 }
 
 //!Instruction CMP behavior method.
@@ -625,7 +632,7 @@ void ac_behavior( CMP )
     doubleop_dest(DM, RB, operand_tmp, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, true);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true));
 }
 
 //!Instruction DADD behavior method.
@@ -656,7 +663,7 @@ void ac_behavior( BIT )
     doubleop_dest(DM, RB, tmp, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, true);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true));
 }
 
 //!Instruction BIC behavior method.
@@ -670,7 +677,7 @@ void ac_behavior( BIC )
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false));
 }
 
 //!Instruction BIS behavior method.
@@ -684,7 +691,7 @@ void ac_behavior( BIS )
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false));
 }
 
 //!Instruction XOR behavior method.
@@ -713,7 +720,7 @@ void ac_behavior( XOR )
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false));
 }
 
 //!Instruction AND behavior method.
@@ -736,7 +743,7 @@ void ac_behavior( AND )
     doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    cycles += doubleop_cycles(as, ad, rsrc, rdst, false);
+    cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false));
 }
 
 //!Instruction RRC behavior method.
@@ -782,11 +789,11 @@ void ac_behavior( CALL )
     ac_pc = RB[REG_PC];
 
     if(ad == AM_REGISTER)
-        cycles += 4;
+        cycles += ESTIMATE_PIPELINE(4);
     else if(rdst == REG_SR)
-        cycles += 6;
+        cycles += ESTIMATE_PIPELINE(6);
     else
-        cycles += 5;
+        cycles += ESTIMATE_PIPELINE(5);
 }
 
 //!Instruction RETI behavior method.
@@ -813,7 +820,7 @@ void ac_behavior( JZ )
     }
     ac_pc = RB[REG_PC];
 
-    cycles += 2;
+    cycles += ESTIMATE_PIPELINE(2);
 }
 
 //!Instruction JNZ behavior method.
@@ -828,7 +835,7 @@ void ac_behavior( JNZ )
     }
     ac_pc = RB[REG_PC];
 
-    cycles += 2;
+    cycles += ESTIMATE_PIPELINE(2);
 }
 
 //!Instruction JC behavior method.
@@ -843,7 +850,7 @@ void ac_behavior( JC )
     }
     ac_pc = RB[REG_PC];
 
-    cycles += 2;
+    cycles += ESTIMATE_PIPELINE(2);
 }
 
 //!Instruction JNC behavior method.
@@ -858,7 +865,7 @@ void ac_behavior( JNC )
     }
     ac_pc = RB[REG_PC];
 
-    cycles += 2;
+    cycles += ESTIMATE_PIPELINE(2);
 }
 
 //!Instruction JN behavior method.
@@ -873,7 +880,7 @@ void ac_behavior( JN )
     }
     ac_pc = RB[REG_PC];
 
-    cycles += 2;
+    cycles += ESTIMATE_PIPELINE(2);
 }
 
 //!Instruction JGE behavior method.
@@ -888,7 +895,7 @@ void ac_behavior( JGE )
     }
     ac_pc = RB[REG_PC];
 
-    cycles += 2;
+    cycles += ESTIMATE_PIPELINE(2);
 }
 
 //!Instruction JL behavior method.
@@ -903,7 +910,7 @@ void ac_behavior( JL )
     }
     ac_pc = RB[REG_PC];
 
-    cycles += 2;
+    cycles += ESTIMATE_PIPELINE(2);
 }
 
 //!Instruction JMP behavior method.
@@ -913,7 +920,7 @@ void ac_behavior( JMP )
     RB[REG_PC] += signed_offset;
     ac_pc = RB[REG_PC];
 
-    cycles += 2;
+    cycles += ESTIMATE_PIPELINE(2);
 }
 
 //!Instruction PUSHPOPM behavior method.
@@ -955,7 +962,7 @@ void ac_behavior( PUSHPOPM )
     std::cout << " after: SP=" << std::hex << RB[REG_SP] << std::endl
               << std::endl;
 
-    cycles += 3 + n1;
+    cycles += ESTIMATE_PIPELINE(3 + n1);
 }
 
 //!Instruction EXT behavior method.
