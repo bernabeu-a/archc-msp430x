@@ -124,6 +124,12 @@ static extension_t extension;
 static platform_t platform;
 static Syscalls *syscalls;
 static size_t cycles;
+static struct
+{
+    bool measuring;
+    size_t cycles;
+    size_t current;
+} former_current_point;
 
 static unsigned int negative16(uint16_t x)
 {
@@ -363,6 +369,7 @@ void ac_behavior( begin )
     syscalls->print();
 
     cycles = 0;
+    former_current_point.measuring = false;
 }
 
 //!Behavior executed after simulation ends.
@@ -377,7 +384,23 @@ void ac_behavior( instruction )
     extension.tick();
 
     if(platform.energy.is_measuring())
-        std::cout << "> " << std::dec << cycles << ", " << platform.current() << std::endl;
+    {
+        size_t current = platform.current();
+
+        if(!former_current_point.measuring)
+            std::cout << "> " << std::dec << cycles << ", " << current << std::endl;
+        else if(former_current_point.current != current)
+        {
+            std::cout << "> " << std::dec << former_current_point.cycles << ", " << former_current_point.current << std::endl
+                      << "> " << std::dec << cycles << ", " << current << std::endl;
+        }
+
+        former_current_point.measuring = true;
+        former_current_point.cycles = cycles;
+        former_current_point.current = current;
+    }
+    else
+        former_current_point.measuring = false;
 
     //std::cout << std::endl;
     //std::cout << "pc=" << std::hex << ac_pc << std::endl;
