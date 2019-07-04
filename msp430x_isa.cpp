@@ -410,8 +410,8 @@ void ac_behavior( instruction )
         former_current_point.measuring = false;
 
     //std::cout << std::endl;
-    //std::cout << "pc=" << std::hex << ac_pc << std::endl;
-    //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
+    std::cout << "pc=" << std::hex << ac_pc << std::endl;
+    std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
 
     ac_pc += 2;
     RB[REG_PC] = ac_pc;
@@ -777,7 +777,7 @@ void ac_behavior( CALL )
     if(syscalls->is_syscall(address)) // Syscall: run symbolically
     {
         std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
-        syscalls->run(address, RB);
+        syscalls->run(address, DM, RB);
     }
     else // Actually run the call
     {

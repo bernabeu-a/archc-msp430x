@@ -2,7 +2,10 @@
 
 #include "syscalls.h"
 
-#define REG_FIRST_PARAM 12
+#define REG_FIRST_PARAM  12
+#define REG_SECOND_PARAM 13
+#define REG_THIRD_PARAM  14
+#define REG_FOURTH_PARAM 15
 
 static const elf_wl_functions_t whitelist{
     // Leds
@@ -10,6 +13,10 @@ static const elf_wl_functions_t whitelist{
     "led_on",
     "leds_on",
     "leds_off",
+
+    // DMA
+    "dma_memset",
+    "dma_memcpy",
 
     // Energy
     "energy_init",
@@ -42,6 +49,7 @@ std::string Syscalls::get_name(uint16_t address) const
 
 void Syscalls::run(
     uint16_t address,
+    ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB
 )
 {
@@ -54,6 +62,8 @@ void Syscalls::run(
         leds_on();
     else if(name == "led_on")
         led_on(RB[REG_FIRST_PARAM]);
+    else if(name == "dma_memset")
+        dma_memset(DM, RB[REG_FIRST_PARAM], RB[REG_SECOND_PARAM], RB[REG_THIRD_PARAM]);
     else if(name == "energy_init")
         energy_init();
     else if(name == "energy_reduce_consumption")
@@ -86,6 +96,15 @@ void Syscalls::leds_on()
 void Syscalls::led_on(uint8_t n)
 {
     platform.leds.on(n);
+}
+
+void Syscalls::dma_memset(
+    ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
+    uint16_t dst, uint8_t val, uint16_t len
+)
+{
+    while(len--)
+        DM.write_byte(dst++, val);
 }
 
 void Syscalls::energy_init()
