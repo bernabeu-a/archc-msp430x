@@ -14,6 +14,9 @@ static const elf_wl_functions_t whitelist{
     "leds_on",
     "leds_off",
 
+    // Port
+    "prt_drv_init",
+
     // DMA
     "dma_memset",
     "dma_memcpy",
@@ -65,6 +68,8 @@ void Syscalls::run(
         leds_on();
     else if(name == "led_on")
         led_on(RB[REG_FIRST_PARAM]);
+    else if(name == "prt_drv_init")
+        port_init();
     else if(name == "dma_memset")
         dma_memset(DM, RB[REG_FIRST_PARAM], RB[REG_SECOND_PARAM], RB[REG_THIRD_PARAM]);
     else if(name == "dma_memcpy")
@@ -105,6 +110,11 @@ void Syscalls::leds_on()
 void Syscalls::led_on(uint8_t n)
 {
     platform.leds.on(n);
+}
+
+void Syscalls::port_init()
+{
+    platform.port.init();
 }
 
 void Syscalls::dma_memset(

@@ -32,6 +32,9 @@ class Syscalls
         void leds_on();
         void led_on(uint8_t n);
 
+        // Port
+        void port_init();
+
         // DMA
         void dma_memset(
             ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,

@@ -118,6 +118,17 @@ void Leds::off()
         value = 0x00;
 }
 
+/******** Port ********/
+
+Port::Port()
+{
+}
+
+size_t Port::current() const
+{
+    return 0;
+}
+
 /******** Energy ********/
 
 Energy::Energy():

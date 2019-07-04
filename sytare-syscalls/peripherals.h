@@ -61,6 +61,14 @@ class Leds: public Peripheral
         uint8_t value;
 };
 
+class Port: public Peripheral
+{
+    public:
+        Port();
+
+        virtual size_t current() const;
+};
+
 class Energy: public Peripheral
 {
     public:
@@ -81,11 +89,12 @@ struct platform_t
 {
     Cpu cpu;
     Leds leds;
+    Port port;
     Energy energy;
 
     size_t current() const
     {
-        return cpu.current() + leds.current();
+        return cpu.current() + leds.current() + port.current();
     }
 };
 
