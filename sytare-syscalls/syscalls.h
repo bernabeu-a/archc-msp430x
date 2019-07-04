@@ -38,6 +38,11 @@ class Syscalls
             uint16_t dst, uint8_t val, uint16_t len
         );
 
+        void dma_memcpy(
+            ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
+            uint16_t dst, uint16_t src, uint16_t len
+        );
+
         // Energy
         void energy_init();
         void energy_reduce_consumption();

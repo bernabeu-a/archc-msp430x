@@ -18,6 +18,9 @@ static const elf_wl_functions_t whitelist{
     "dma_memset",
     "dma_memcpy",
 
+    // Clock
+    "clk_delay_micro",
+
     // Energy
     "energy_init",
     "energy_reduce_consumption",
@@ -64,6 +67,12 @@ void Syscalls::run(
         led_on(RB[REG_FIRST_PARAM]);
     else if(name == "dma_memset")
         dma_memset(DM, RB[REG_FIRST_PARAM], RB[REG_SECOND_PARAM], RB[REG_THIRD_PARAM]);
+    else if(name == "dma_memcpy")
+        dma_memcpy(DM, RB[REG_FIRST_PARAM], RB[REG_SECOND_PARAM], RB[REG_THIRD_PARAM]);
+    else if(name == "clk_delay_micro")
+    {
+        // TODO
+    }
     else if(name == "energy_init")
         energy_init();
     else if(name == "energy_reduce_consumption")
@@ -105,6 +114,15 @@ void Syscalls::dma_memset(
 {
     while(len--)
         DM.write_byte(dst++, val);
+}
+
+void Syscalls::dma_memcpy(
+    ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
+    uint16_t dst, uint16_t src, uint16_t len
+)
+{
+    while(len--)
+        DM.write_byte(dst++, DM.read_byte(src++));
 }
 
 void Syscalls::energy_init()
