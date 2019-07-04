@@ -111,12 +111,6 @@ struct extension_t
     }
 };
 
-union alu_value_u
-{
-    uint16_t u;
-    int16_t i;
-};
-
 enum addressing_mode_e
 {
     AM_REGISTER = 0,
