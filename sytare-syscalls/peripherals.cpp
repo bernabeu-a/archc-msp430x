@@ -129,6 +129,17 @@ size_t Port::current() const
     return 0;
 }
 
+/******** Spi ********/
+
+Spi::Spi()
+{
+}
+
+size_t Spi::current() const
+{
+    return 0;
+}
+
 /******** Energy ********/
 
 Energy::Energy():

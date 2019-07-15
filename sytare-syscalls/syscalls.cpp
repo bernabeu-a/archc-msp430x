@@ -17,6 +17,9 @@ static const elf_wl_functions_t whitelist{
     // Port
     "prt_drv_init",
 
+    // Spi
+    "spi_init",
+
     // DMA
     "dma_memset",
     "dma_memcpy",

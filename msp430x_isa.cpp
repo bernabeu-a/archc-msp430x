@@ -429,8 +429,16 @@ void ac_behavior( MOV )
 {
     uint16_t operand = doubleop_source(DM, RB, as, bw, rsrc);
 
-    doubleop_dest(DM, RB, operand, ad, bw, rdst);
-    ac_pc = RB[REG_PC];
+    if(rdst == REG_PC && syscalls->is_syscall(operand)) // Syscall: run symbolically
+    {
+        std::cout << "SYSCALL: " << syscalls->get_name(operand) << std::endl;
+        syscalls->run(operand, DM, RB);
+    }
+    else
+    {
+        doubleop_dest(DM, RB, operand, ad, bw, rdst);
+        ac_pc = RB[REG_PC];
+    }
 
     cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true));
 }

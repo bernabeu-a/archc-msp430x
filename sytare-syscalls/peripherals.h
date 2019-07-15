@@ -69,6 +69,15 @@ class Port: public Peripheral
         virtual size_t current() const;
 };
 
+class Spi: public Peripheral
+{
+    public:
+        Spi();
+        // TODO: overload init() to make changes in Port device
+
+        virtual size_t current() const;
+};
+
 class Energy: public Peripheral
 {
     public:
@@ -90,11 +99,12 @@ struct platform_t
     Cpu cpu;
     Leds leds;
     Port port;
+    Spi spi;
     Energy energy;
 
     size_t current() const
     {
-        return cpu.current() + leds.current() + port.current();
+        return cpu.current() + leds.current() + port.current() + spi.current();
     }
 };
 
