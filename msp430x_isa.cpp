@@ -606,6 +606,8 @@ void ac_behavior( CMP )
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
+    sr.set_C(operand_dst >= operand_src);
+
     operand_dst += ~operand_src + 1;
 
     sr.set_Z(operand_dst == 0);
@@ -619,14 +621,6 @@ void ac_behavior( CMP )
         sr.set_N(negative16(operand_dst));
         sr.set_V(overflow16(operand_src, operand_tmp, operand_dst));
     }
-
-    uint32_t promoted_src = ~operand_src + 1;
-    uint32_t promoted_dst = operand_tmp;
-    uint32_t promoted_result = promoted_src + promoted_dst;
-    if(bw)
-        sr.set_C(carry8(promoted_result));
-    else
-        sr.set_C(carry16(promoted_result));
 
     // Do not change the value
     doubleop_dest(DM, RB, operand_tmp, ad, bw, rdst);
