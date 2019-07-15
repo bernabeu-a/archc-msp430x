@@ -410,8 +410,8 @@ void ac_behavior( instruction )
         former_current_point.measuring = false;
 
     //std::cout << std::endl;
-    std::cout << "pc=" << std::hex << ac_pc << std::endl;
-    std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
+    //std::cout << "pc=" << std::hex << ac_pc << std::endl;
+    //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
 
     ac_pc += 2;
     RB[REG_PC] = ac_pc;

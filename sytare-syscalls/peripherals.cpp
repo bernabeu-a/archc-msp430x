@@ -184,6 +184,16 @@ void CC2500::wakeup()
     }
 }
 
+void CC2500::send_packet(const uint8_t *buf, size_t size)
+{
+    if(check_initialized())
+    {
+        if(state != IDLE)
+            std::cerr << "Oops CC2500::send_packet called in wrong state" << std::endl;
+
+    }
+}
+
 /******** Energy ********/
 
 Energy::Energy():

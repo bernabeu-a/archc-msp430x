@@ -43,6 +43,7 @@ class Syscalls
         void cc2500_idle();
         void cc2500_sleep();
         void cc2500_wakeup();
+        void cc2500_send_packet(const uint8_t *buf, size_t size);
 
         // DMA
         void dma_memset(

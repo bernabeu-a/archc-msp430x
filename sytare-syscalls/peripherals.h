@@ -89,6 +89,7 @@ class CC2500: public Peripheral
         void idle();
         void sleep();
         void wakeup();
+        void send_packet(const uint8_t *buf, size_t size);
 
     private:
         enum {

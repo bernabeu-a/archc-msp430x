@@ -33,6 +33,7 @@ static const elf_wl_functions_t whitelist{
     "cc2500_idle",
     "cc2500_sleep",
     "cc2500_wakeup",
+    "cc2500_send_packet",
 
     // Energy
     "energy_init",
@@ -101,7 +102,18 @@ void Syscalls::run(
     else if(name == "cc2500_sleep")
         cc2500_sleep();
     else if(name == "cc2500_wakeup")
-        cc2500_sleep();
+        cc2500_wakeup();
+    else if(name == "cc2500_send_packet")
+    {
+        uint16_t ptr = RB[REG_FIRST_PARAM];
+        uint16_t size = RB[REG_SECOND_PARAM];
+
+        std::vector<uint8_t> buf(size);
+        for(size_t i = 0; i < size; ++i)
+            buf[i] = DM.read_byte(ptr++);
+
+        cc2500_send_packet(buf.data(), size);
+    }
     else if(name == "energy_init")
         energy_init();
     else if(name == "energy_reduce_consumption")
@@ -164,6 +176,11 @@ void Syscalls::cc2500_sleep()
 void Syscalls::cc2500_wakeup()
 {
     platform.cc2500.wakeup();
+}
+
+void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
+{
+    platform.cc2500.send_packet(buf, size);
 }
 
 void Syscalls::dma_memset(
