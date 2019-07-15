@@ -929,7 +929,7 @@ void ac_behavior( JMP )
 void ac_behavior( PUSHPOPM )
 {
     uint16_t n = 1 + n1;
-    uint16_t rdst = rdst1 + n1;
+    uint16_t rdst = rdst1;
 
     if(!(subop & 0x1))
         std::cerr << "PUSHPOPM: address mode not supported." << std::endl;
@@ -942,7 +942,7 @@ void ac_behavior( PUSHPOPM )
     if(!(subop & 0x2)) // PUSHM
     {
         std::cout << " It's a pushm!" << std::endl;
-        for(; n; --n, --rdst)
+        for(; n--; --rdst)
         {
             std::cout << "  r" << std::dec << rdst << std::endl;
             RB[REG_SP] -= 2;
@@ -952,7 +952,7 @@ void ac_behavior( PUSHPOPM )
     else // POPM
     {
         std::cout << " It's a popm!" << std::endl;
-        for(; n; --n, ++rdst)
+        for(; n--; ++rdst)
         {
             std::cout << "  r" << std::dec << rdst << std::endl;
             RB[rdst] = DM.read(RB[REG_SP]);
