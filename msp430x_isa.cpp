@@ -431,14 +431,15 @@ void ac_behavior( MOV )
 
     if(rdst == REG_PC && syscalls->is_syscall(operand)) // Syscall: run symbolically
     {
+        // BR instruction
         std::cout << "SYSCALL: " << syscalls->get_name(operand) << std::endl;
+        doubleop_dest(DM, RB, RB[REG_PC], ad, bw, rdst); // PC = next(PC)
         syscalls->run(operand, DM, RB);
     }
     else
-    {
         doubleop_dest(DM, RB, operand, ad, bw, rdst);
-        ac_pc = RB[REG_PC];
-    }
+
+    ac_pc = RB[REG_PC];
 
     cycles += ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true));
 }
@@ -927,7 +928,14 @@ void ac_behavior( JL )
 void ac_behavior( JMP )
 {
     int16_t signed_offset = 2 * u10_to_i16(offset);
-    RB[REG_PC] += signed_offset;
+    uint16_t address = RB[REG_PC] + signed_offset;
+    if(syscalls->is_syscall(address)) // Syscall: run symbolically
+    {
+        std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
+        syscalls->run(address, DM, RB);
+    }
+    else // Actually run the call
+        RB[REG_PC] = address;
     ac_pc = RB[REG_PC];
 
     cycles += ESTIMATE_PIPELINE(2);

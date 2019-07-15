@@ -27,6 +27,13 @@ static const elf_wl_functions_t whitelist{
     // Clock
     "clk_delay_micro",
 
+    // cc2500
+    "cc2500_init",
+    "cc2500_configure",
+    "cc2500_idle",
+    "cc2500_sleep",
+    "cc2500_wakeup",
+
     // Energy
     "energy_init",
     "energy_reduce_consumption",
@@ -73,6 +80,8 @@ void Syscalls::run(
         led_on(RB[REG_FIRST_PARAM]);
     else if(name == "prt_drv_init")
         port_init();
+    else if(name == "spi_init")
+        spi_init();
     else if(name == "dma_memset")
         dma_memset(DM, RB[REG_FIRST_PARAM], RB[REG_SECOND_PARAM], RB[REG_THIRD_PARAM]);
     else if(name == "dma_memcpy")
@@ -81,6 +90,18 @@ void Syscalls::run(
     {
         // TODO
     }
+    else if(name == "cc2500_init")
+        cc2500_init();
+    else if(name == "cc2500_configure")
+    {
+        // TODO
+    }
+    else if(name == "cc2500_idle")
+        cc2500_idle();
+    else if(name == "cc2500_sleep")
+        cc2500_sleep();
+    else if(name == "cc2500_wakeup")
+        cc2500_sleep();
     else if(name == "energy_init")
         energy_init();
     else if(name == "energy_reduce_consumption")
@@ -118,6 +139,31 @@ void Syscalls::led_on(uint8_t n)
 void Syscalls::port_init()
 {
     platform.port.init();
+}
+
+void Syscalls::spi_init()
+{
+    platform.spi.init();
+}
+
+void Syscalls::cc2500_init()
+{
+    platform.cc2500.init();
+}
+
+void Syscalls::cc2500_idle()
+{
+    platform.cc2500.idle();
+}
+
+void Syscalls::cc2500_sleep()
+{
+    platform.cc2500.sleep();
+}
+
+void Syscalls::cc2500_wakeup()
+{
+    platform.cc2500.wakeup();
 }
 
 void Syscalls::dma_memset(

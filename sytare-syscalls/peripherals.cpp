@@ -140,6 +140,50 @@ size_t Spi::current() const
     return 0;
 }
 
+/******** CC2500 ********/
+CC2500::CC2500():
+    state(IDLE)
+{
+}
+
+size_t CC2500::current() const
+{
+    switch(state)
+    {
+        case IDLE:
+            return 1675;
+
+        case RX:
+            return 17563;
+
+        default:
+            return 0;
+    }
+}
+
+void CC2500::idle()
+{
+    if(check_initialized())
+        state = IDLE;
+}
+
+void CC2500::sleep()
+{
+    if(check_initialized())
+        state = SLEEP;
+}
+
+void CC2500::wakeup()
+{
+    if(check_initialized())
+    {
+        if(state != SLEEP)
+            std::cerr << "Oops CC2500::wakeup called in wrong state" << std::endl;
+        else
+            state = IDLE;
+    }
+}
+
 /******** Energy ********/
 
 Energy::Energy():

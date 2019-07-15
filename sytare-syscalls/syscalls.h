@@ -35,6 +35,15 @@ class Syscalls
         // Port
         void port_init();
 
+        // Spi
+        void spi_init();
+
+        // cc2500
+        void cc2500_init();
+        void cc2500_idle();
+        void cc2500_sleep();
+        void cc2500_wakeup();
+
         // DMA
         void dma_memset(
             ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,

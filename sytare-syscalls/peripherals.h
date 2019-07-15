@@ -78,6 +78,26 @@ class Spi: public Peripheral
         virtual size_t current() const;
 };
 
+class CC2500: public Peripheral
+{
+    public:
+        CC2500();
+
+        virtual size_t current() const;
+
+        // syscalls
+        void idle();
+        void sleep();
+        void wakeup();
+
+    private:
+        enum {
+            IDLE,
+            SLEEP,
+            RX
+        } state;
+};
+
 class Energy: public Peripheral
 {
     public:
@@ -100,11 +120,12 @@ struct platform_t
     Leds leds;
     Port port;
     Spi spi;
+    CC2500 cc2500;
     Energy energy;
 
     size_t current() const
     {
-        return cpu.current() + leds.current() + port.current() + spi.current();
+        return cpu.current() + leds.current() + port.current() + spi.current() + cc2500.current();
     }
 };
 
