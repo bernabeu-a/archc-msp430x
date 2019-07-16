@@ -5,12 +5,13 @@
 
 #include "utils/elfreader.h"
 #include "peripherals.h"
+#include "energy_manager.h"
 #include "msp430x_isa.H"
 
 class Syscalls
 {
     public:
-        Syscalls(platform_t &platform);
+        Syscalls(platform_t &platform, EnergyManager &emanager);
 
         void print() const;
         bool is_syscall(uint16_t address) const;
@@ -64,6 +65,7 @@ class Syscalls
 
         elf_functions_t functions;
         platform_t &platform;
+        EnergyManager &emanager;
 };
 
 #endif

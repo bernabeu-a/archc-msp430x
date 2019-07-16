@@ -42,9 +42,10 @@ static const elf_wl_functions_t whitelist{
     "energy_stop_measurements"
 };
 
-Syscalls::Syscalls(platform_t &platform):
+Syscalls::Syscalls(platform_t &platform, EnergyManager &emanager):
     functions(read_functions_from_args(0, nullptr, whitelist)),
-    platform(platform)
+    platform(platform),
+    emanager(emanager)
 {
 }
 
@@ -213,10 +214,12 @@ void Syscalls::energy_reduce_consumption()
 void Syscalls::energy_start_measurements()
 {
     platform.energy.start();
+    emanager.start_log();
 }
 
 void Syscalls::energy_stop_measurements()
 {
     platform.energy.stop();
+    emanager.stop_log();
 }
 
