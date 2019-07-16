@@ -185,7 +185,13 @@ void Syscalls::cc2500_wakeup()
 void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
 {
     platform.cc2500.send_packet(buf, size);
-    emanager.transaction(2000, 50 + 2.477 * size);
+
+    size_t duration;
+    if(size < 64)
+        duration = 1250.1 + 38.769 * size;
+    else
+        duration = 1676.9 + 32.006 * size;
+    emanager.transaction(duration, 50 + 2.477 * size);
 }
 
 void Syscalls::dma_memset(
