@@ -8,6 +8,13 @@
 #include "energy_manager.h"
 #include "msp430x_isa.H"
 
+struct syscall_consumption_t
+{
+    size_t energy;      // uJ
+    size_t max_current; // uA
+    size_t duration;    // us
+};
+
 class Syscalls
 {
     public:

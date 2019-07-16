@@ -16,7 +16,7 @@ class EnergyManager
 
         void start_log();
         void stop_log();
-        void log() const;
+        void log(size_t temporary_current = 0);
 
     private:
         size_t cycles;

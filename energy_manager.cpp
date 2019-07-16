@@ -12,17 +12,20 @@ void EnergyManager::add_cycles(size_t amount)
     cycles += amount;
 }
 
-void EnergyManager::transaction(size_t tcycles, size_t tenergy)
+void EnergyManager::transaction(size_t duration, size_t energy)
 {
-    const float VCC = 3.3;
-    const float CLOCK_FREQ = 24e6;
+    const float VCC = 3.3; // V
+    const size_t CLOCK_FREQ = 24; // MHz
 
-    float inv_dt = CLOCK_FREQ / tcycles;
-    float additional_current = tenergy * inv_dt / VCC;
+    std::cout << "transaction:" << std::endl
+              << ' ' << std::dec << duration << " us" << std::endl
+              << ' ' << energy << " uJ" << std::endl;
 
-    // TODO: inject current value
-
-    add_cycles(tcycles);
+    log(); // Log before
+    log(energy*1e6 / (VCC * duration)); // Beginning of the transaction
+    add_cycles(CLOCK_FREQ * duration); // Forward
+    log(energy*1e6 / (VCC * duration)); // End of the transaction
+    log(); // Log after
 }
 
 void EnergyManager::start_log()
@@ -35,8 +38,8 @@ void EnergyManager::stop_log()
     logger.stop();
 }
 
-void EnergyManager::log() const
+void EnergyManager::log(size_t temporary_current) 
 {
-    logger.log(cycles, platform.current());
+    logger.log(cycles, platform.current() + temporary_current);
 }
 

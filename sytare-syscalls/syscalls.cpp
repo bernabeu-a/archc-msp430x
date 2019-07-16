@@ -167,21 +167,25 @@ void Syscalls::cc2500_init()
 void Syscalls::cc2500_idle()
 {
     platform.cc2500.idle();
+    emanager.transaction(110, 7);
 }
 
 void Syscalls::cc2500_sleep()
 {
     platform.cc2500.sleep();
+    emanager.transaction(20, 0);
 }
 
 void Syscalls::cc2500_wakeup()
 {
     platform.cc2500.wakeup();
+    emanager.transaction(395, 5);
 }
 
 void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
 {
     platform.cc2500.send_packet(buf, size);
+    emanager.transaction(2000, 50 + 2.477 * size);
 }
 
 void Syscalls::dma_memset(

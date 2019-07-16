@@ -18,10 +18,10 @@ class EnergyLogger
         void log(size_t cycles, size_t current, bool first);
 
         std::ostream &out;
+        bool enabled;
 
         struct
         {
-            bool measuring;
             size_t cycles;
             size_t current;
         } former_current_point;
