@@ -30,8 +30,8 @@ void EnergyLogger::log(size_t cycles, size_t current)
 void EnergyLogger::log(size_t cycles, size_t current, bool first)
 {
     if(first)
-        std::cout << "> " << cycles << ", " << current << std::endl;
-    else
+        std::cout << "> " << std::dec << cycles << ", " << current << std::endl;
+    else if(current != former_current_point.current)
     {
         std::cout << "> " << std::dec << former_current_point.cycles << ", " << former_current_point.current << std::endl
                   << "> " << std::dec << cycles << ", " << current << std::endl;
