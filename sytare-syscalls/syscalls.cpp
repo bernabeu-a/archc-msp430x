@@ -7,6 +7,10 @@
 #define REG_THIRD_PARAM  14
 #define REG_FOURTH_PARAM 15
 
+const float VCC = 3.3; // V
+const float Icpu_active = 1864e-6; // A
+const float Pcpu_active = VCC * Icpu_active;
+
 static const elf_wl_functions_t whitelist{
     // Leds
     "leds_init",
@@ -167,7 +171,8 @@ void Syscalls::cc2500_init()
 void Syscalls::cc2500_idle()
 {
     platform.cc2500.idle();
-    emanager.transaction(110, 7);
+    const size_t duration = 110;
+    emanager.transaction(110, 7 - duration * Pcpu_active);
 }
 
 void Syscalls::cc2500_sleep()
@@ -179,7 +184,8 @@ void Syscalls::cc2500_sleep()
 void Syscalls::cc2500_wakeup()
 {
     platform.cc2500.wakeup();
-    emanager.transaction(395, 5);
+    const size_t duration = 395;
+    emanager.transaction(395, 5 - duration * Pcpu_active);
 }
 
 void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
@@ -191,7 +197,7 @@ void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
         duration = 1250.1 + 38.769 * size;
     else
         duration = 1676.9 + 32.006 * size;
-    emanager.transaction(duration, 50 + 2.477 * size);
+    emanager.transaction(duration, 50 + 2.477 * size - duration * Pcpu_active);
 }
 
 void Syscalls::dma_memset(
