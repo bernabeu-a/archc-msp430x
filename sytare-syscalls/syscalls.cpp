@@ -202,9 +202,9 @@ void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
 
     size_t duration;
     if(size < 64)
-        duration = 1250.1 + 38.769 * size;
+        duration = 1264.1 + 37.557 * size;
     else
-        duration = 1676.9 + 32.006 * size;
+        duration = 1690.9 + 30.794 * size;
     emanager.transaction(duration, 50 + 2.477 * size - duration * Pcpu_active);
 }
 
