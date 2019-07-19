@@ -48,6 +48,7 @@ class Syscalls
 
         // cc2500
         void cc2500_init();
+        void cc2500_configure();
         void cc2500_idle();
         void cc2500_sleep();
         void cc2500_wakeup();

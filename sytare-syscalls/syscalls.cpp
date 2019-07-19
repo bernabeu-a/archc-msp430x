@@ -100,9 +100,7 @@ void Syscalls::run(
     else if(name == "cc2500_init")
         cc2500_init();
     else if(name == "cc2500_configure")
-    {
-        // TODO
-    }
+        cc2500_configure();
     else if(name == "cc2500_idle")
         cc2500_idle();
     else if(name == "cc2500_sleep")
@@ -166,7 +164,16 @@ void Syscalls::spi_init()
 
 void Syscalls::cc2500_init()
 {
+    const size_t duration = 225;
+    emanager.transaction(duration, 13 - duration * Pcpu_active);
     platform.cc2500.init();
+}
+
+void Syscalls::cc2500_configure()
+{
+    const size_t duration = 573;
+    emanager.transaction(duration, 7 - duration * Pcpu_active);
+    // TODO
 }
 
 void Syscalls::cc2500_idle()

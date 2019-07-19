@@ -9,7 +9,7 @@ class Peripheral
         Peripheral();
 
         // syscalls
-        void init();
+        virtual void init();
 
         virtual size_t current() const = 0;
 
@@ -86,6 +86,7 @@ class CC2500: public Peripheral
         virtual size_t current() const;
 
         // syscalls
+        void init();
         void idle();
         void sleep();
         void wakeup();

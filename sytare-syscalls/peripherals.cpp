@@ -142,8 +142,14 @@ size_t Spi::current() const
 
 /******** CC2500 ********/
 CC2500::CC2500():
-    state(IDLE)
+    state(SLEEP)
 {
+}
+
+void CC2500::init()
+{
+    Peripheral::init();
+    state = IDLE;
 }
 
 size_t CC2500::current() const
