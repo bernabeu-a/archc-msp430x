@@ -205,7 +205,7 @@ void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
         duration = 1264.1 + 37.557 * size;
     else
         duration = 1690.9 + 30.794 * size;
-    emanager.transaction(duration, 50 + 2.477 * size - duration * Pcpu_active);
+    emanager.transaction(duration, 50 + 2.379 * size - duration * Pcpu_active);
 }
 
 void Syscalls::dma_memset(
