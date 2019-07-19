@@ -12,7 +12,7 @@ class EnergyManager
         EnergyManager(EnergyLogger &logger, const platform_t &platform);
 
         void add_cycles(size_t amount);
-        void transaction(size_t tcycles, size_t tenergy);
+        void transaction(size_t duration, size_t energy);
 
         void start_log();
         void stop_log();

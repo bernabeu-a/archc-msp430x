@@ -10,6 +10,7 @@
 const float VCC = 3.3; // V
 const float Icpu_active = 1864e-6; // A
 const float Pcpu_active = VCC * Icpu_active;
+const float MCLK_FREQ = 24; // MHz
 
 static const elf_wl_functions_t whitelist{
     // Leds
@@ -170,22 +171,22 @@ void Syscalls::cc2500_init()
 
 void Syscalls::cc2500_idle()
 {
-    platform.cc2500.idle();
     const size_t duration = 110;
     emanager.transaction(110, 7 - duration * Pcpu_active);
+    platform.cc2500.idle();
 }
 
 void Syscalls::cc2500_sleep()
 {
-    platform.cc2500.sleep();
     emanager.transaction(20, 0);
+    platform.cc2500.sleep();
 }
 
 void Syscalls::cc2500_wakeup()
 {
-    platform.cc2500.wakeup();
     const size_t duration = 395;
     emanager.transaction(395, 5 - duration * Pcpu_active);
+    platform.cc2500.wakeup();
 }
 
 void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
@@ -205,8 +206,9 @@ void Syscalls::dma_memset(
     uint16_t dst, uint8_t val, uint16_t len
 )
 {
-    while(len--)
+    for(uint16_t i = len; i--;)
         DM.write_byte(dst++, val);
+    emanager.transaction((1 + 2*len) / MCLK_FREQ, 0);
 }
 
 void Syscalls::dma_memcpy(
@@ -214,8 +216,9 @@ void Syscalls::dma_memcpy(
     uint16_t dst, uint16_t src, uint16_t len
 )
 {
-    while(len--)
+    for(uint16_t i = len; i--;)
         DM.write_byte(dst++, DM.read_byte(src++));
+    emanager.transaction((1 + 2*len) / MCLK_FREQ, 0);
 }
 
 void Syscalls::energy_init()
