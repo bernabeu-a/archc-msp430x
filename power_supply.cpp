@@ -2,11 +2,12 @@
 
 #include "power_supply.h"
 
-PowerSupply::PowerSupply(double capacitance, double supply_vcc, double v_lo_threshold, double v_hi_threshold):
+PowerSupply::PowerSupply(double capacitance, double supply_vcc, double v_lo_threshold, double v_hi_threshold, double v_interrupt_threshold):
     capacitance(capacitance),
     supply_vcc(supply_vcc),
     e_lo_threshold(capacitance * v_lo_threshold * v_lo_threshold / 2.),
     e_hi_threshold(capacitance * v_hi_threshold * v_hi_threshold / 2.),
+    e_interrupt_threshold(capacitance * v_interrupt_threshold * v_interrupt_threshold / 2.),
     state(ON) // Start on
 {
     refill(); // Start full
@@ -59,6 +60,13 @@ void PowerSupply::update_state()
     switch(state)
     {
         case ON:
+            if(energy <= e_lo_threshold)
+                state = OFF;
+            else if(energy <= e_interrupt_threshold)
+                state = INTERRUPT;
+            break;
+
+        case INTERRUPT:
             if(energy <= e_lo_threshold)
                 state = OFF;
             break;

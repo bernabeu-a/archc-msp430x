@@ -126,7 +126,7 @@ static extension_t extension;
 static platform_t platform;
 static Syscalls *syscalls;
 static EnergyLogger elogger(std::cout);
-static PowerSupply supply(100, 3.3, 3.5, 4.);
+static PowerSupply supply(100, 3.3, 3.5, 4., 3.6);
 static EnergyManager emanager(elogger, supply, platform);
 
 static inline size_t ESTIMATE_PIPELINE(size_t ncycles)
@@ -392,10 +392,18 @@ void ac_behavior( instruction )
     //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
 
     std::cout << supply.voltage() << std::endl;
-    if(supply.get_state() == OFF)
+    switch(supply.get_state())
     {
-        supply.refill();
-        // TODO reboot
+        case ON:
+            break;
+
+        case INTERRUPT:
+            std::cout << "INTERRUPT" << std::endl;
+            break;
+
+        default: // OFF
+            supply.refill();
+            // TODO reboot
     }
 
     ac_pc += 2;
