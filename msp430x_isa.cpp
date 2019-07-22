@@ -81,6 +81,21 @@ struct sr_flags_t
                    | (Z      << 1)
                    | (C          );
     }
+
+    void on_interrupt(void)
+    {
+        RB[REG_SR] &= (SCG0 << 6);
+        V      = 0;
+        SCG1   = 0;
+        OSCOFF = 0;
+        CPUOFF = 0;
+        GIE    = 0;
+        N      = 0;
+        Z      = 0;
+        C      = 0;
+
+        // TODO out of LPM
+    }
 };
 
 enum extension_state_e
@@ -367,6 +382,29 @@ static void extension_to_repeat(
         count = 1 + (extension.payload_l & 0xf);
 }
 
+static void fire_interrupt(
+    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
+    ac_memory &DM)
+{
+    // Push PC
+    RB[REG_SP] -= 2;
+    DM.write(RB[REG_SP], RB[REG_PC]);
+
+    // Push SR
+    RB[REG_SP] -= 2;
+    DM.write(RB[REG_SP], RB[REG_SR]);
+
+    sr_flags_t sr(RB);
+    sr.on_interrupt();
+
+    // TODO: interrupt priority
+    // TODO: check interrupt vector
+
+    RB[REG_PC] = DM.read(0xfff8); // IV 53, comparator
+
+    emanager.add_cycles(6);
+}
+
 //!Behavior executed before simulation begins.
 void ac_behavior( begin )
 {
@@ -398,8 +436,17 @@ void ac_behavior( instruction )
             break;
 
         case INTERRUPT:
-            std::cout << "INTERRUPT" << std::endl;
+        {
+            sr_flags_t sr(RB);
+            if(sr.GIE)
+            {
+                std::cout << "INTERRUPT" << std::endl;
+                fire_interrupt(RB, DM);
+                ac_pc = RB[REG_PC];
+                return;
+            }
             break;
+        }
 
         default: // OFF
             supply.refill();
