@@ -4,12 +4,13 @@
 #include <cstddef>
 
 #include "energy_logger.h"
+#include "power_supply.h"
 #include "sytare-syscalls/peripherals.h"
 
 class EnergyManager
 {
     public:
-        EnergyManager(EnergyLogger &logger, const platform_t &platform);
+        EnergyManager(EnergyLogger &logger, PowerSupply &supply, const platform_t &platform);
 
         void add_cycles(size_t amount);
         void transaction(size_t duration, size_t energy);
@@ -22,6 +23,7 @@ class EnergyManager
         size_t cycles;
 
         EnergyLogger &logger;
+        PowerSupply &supply;
         const platform_t &platform;
 };
 

@@ -30,7 +30,7 @@ ACLIBFILES := ac_decoder_rt.o ac_module.o ac_mem.o ac_utils.o ac_hltrace.o ac_sy
 ADDITIONAL_SRC = sytare-syscalls/syscalls.cpp sytare-syscalls/peripherals.cpp utils/elfreader.cpp
 
 # These are the source files provided by the user + ArchC sources
-SRCS := main.cpp energy_manager.cpp energy_logger.cpp $(ACSRCS)  $(TARGET)_syscall.cpp $(ADDITIONAL_SRC)
+SRCS := main.cpp energy_manager.cpp energy_logger.cpp power_supply.cpp $(ACSRCS)  $(TARGET)_syscall.cpp $(ADDITIONAL_SRC)
 
 OBJS := $(SRCS:.cpp=.o)
 
