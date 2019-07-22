@@ -25,7 +25,7 @@ void PowerSupply::add_energy(double e)
 void PowerSupply::refill()
 {
     energy = e_hi_threshold;
-    update_state();
+    state = ON;
 }
 
 double PowerSupply::voltage() const

@@ -450,7 +450,13 @@ void ac_behavior( instruction )
 
         default: // OFF
             supply.refill();
-            // TODO reboot
+
+            std::cout << "REBOOT" << std::endl;
+
+            // Reboot
+            RB[REG_PC] = DM.read(0xfffe); // Reset vector
+            ac_pc = RB[REG_PC];
+            return;
     }
 
     ac_pc += 2;
