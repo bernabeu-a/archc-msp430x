@@ -203,7 +203,7 @@ static uint16_t doubleop_source(
                 operand = 0;
             else
             {
-                operand = RB[rsrc];
+                operand = RB[rsrc] - (rsrc == REG_PC ? 2 : 0);
                 if(bw)
                     operand &= 0xff;
             }
@@ -212,16 +212,12 @@ static uint16_t doubleop_source(
         case AM_INDEXED:
             if(rsrc == REG_CG2)
                 operand = 0x1;
-            /*
-            else if(rsrc == REG_CG1)
-            {
-                operand = DM.read(RB[rsrc]);
-                std::cerr << "Oops As=1, src=r2" << std::endl;
-            }
-            */
             else
             {
                 uint16_t x = DM.read(RB[REG_PC]);
+                if(rsrc != REG_CG1)
+                    x += RB[rsrc];
+
                 if(bw)
                     operand = DM.read_byte(x);
                 else
@@ -282,6 +278,9 @@ static uint16_t doubleop_dest_operand(
         case AM_INDEXED:
         {
             uint16_t x = DM.read(RB[REG_PC]);
+            if(rdst != REG_CG1)
+                x += RB[rdst];
+
             if(bw)
                 return DM.read_byte(x);
             else
@@ -310,6 +309,9 @@ static void doubleop_dest(
         case AM_INDEXED:
         {
             uint16_t x = DM.read(RB[REG_PC]);
+            if(rdst != REG_CG1)
+                x += RB[rdst];
+
             if(bw)
                 DM.write_byte(x, operand);
             else
@@ -856,7 +858,16 @@ void ac_behavior( CALL )
 //!Instruction RETI behavior method.
 void ac_behavior( RETI )
 {
-    std::cout << "Oops (RETI)" << std::endl;
+    // Pop SR
+    RB[REG_SR] = DM.read(RB[REG_SP]);
+    RB[REG_SP] += 2;
+
+    // Pop PC
+    RB[REG_PC] = DM.read(RB[REG_SP]);
+    RB[REG_SP] += 2;
+
+    ac_pc = RB[REG_PC];
+    emanager.add_cycles(ESTIMATE_PIPELINE(5));
 }
 
 //!Instruction SXT behavior method.

@@ -213,6 +213,9 @@ void Syscalls::dma_memset(
     uint16_t dst, uint8_t val, uint16_t len
 )
 {
+    if(!len)
+        return;
+
     for(uint16_t i = len; i--;)
         DM.write_byte(dst++, val);
     emanager.transaction((1 + 2*len) / MCLK_FREQ, 0);
@@ -223,6 +226,9 @@ void Syscalls::dma_memcpy(
     uint16_t dst, uint16_t src, uint16_t len
 )
 {
+    if(!len)
+        return;
+
     for(uint16_t i = len; i--;)
         DM.write_byte(dst++, DM.read_byte(src++));
     emanager.transaction((1 + 2*len) / MCLK_FREQ, 0);
