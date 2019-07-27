@@ -407,11 +407,29 @@ static void fire_interrupt(
     emanager.add_cycles(6);
 }
 
+static void erase_memory_on_boot(ac_memory &DM)
+{
+    const uint16_t sram_begin  = 0x1c00;
+    const uint16_t sram_end    = 0x2000;
+    const uint8_t  sram_canary = 0xde;
+
+    const uint16_t periph_begin = 0x0000;
+    const uint16_t periph_end   = 0x1000;
+    const uint8_t  periph_canary = 0xad;
+
+    for(uint16_t i = sram_begin; i < sram_end; ++i)
+        DM.write_byte(i, sram_canary);
+
+    for(uint16_t i = periph_begin; i < periph_end; ++i)
+        DM.write_byte(i, periph_canary);
+}
+
 //!Behavior executed before simulation begins.
 void ac_behavior( begin )
 {
     syscalls = new Syscalls(platform, emanager);
     syscalls->print();
+    erase_memory_on_boot(DM);
 }
 
 //!Behavior executed after simulation ends.
@@ -457,6 +475,7 @@ void ac_behavior( instruction )
 
             // Reboot
             RB[REG_PC] = DM.read(0xfffe); // Reset vector
+            erase_memory_on_boot(DM);
             ac_pc = RB[REG_PC];
             ac_annul();
             return;
