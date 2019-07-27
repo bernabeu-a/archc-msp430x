@@ -20,10 +20,10 @@ static const elf_wl_functions_t whitelist{
     "leds_off",
 
     // Port
-    "prt_drv_init",
+    "prt_drv_init_hw",
 
     // Spi
-    "spi_init",
+    "spi_init_hw",
 
     // DMA
     "dma_memset",
@@ -33,7 +33,7 @@ static const elf_wl_functions_t whitelist{
     "clk_delay_micro",
 
     // cc2500
-    "cc2500_init",
+    "cc2500_init_hw",
     "cc2500_configure",
     "cc2500_idle",
     "cc2500_sleep",
@@ -85,9 +85,9 @@ void Syscalls::run(
         leds_on();
     else if(name == "led_on")
         led_on(RB[REG_FIRST_PARAM]);
-    else if(name == "prt_drv_init")
+    else if(name == "prt_drv_init_hw")
         port_init();
-    else if(name == "spi_init")
+    else if(name == "spi_init_hw")
         spi_init();
     else if(name == "dma_memset")
         dma_memset(DM, RB[REG_FIRST_PARAM], RB[REG_SECOND_PARAM], RB[REG_THIRD_PARAM]);
@@ -97,7 +97,7 @@ void Syscalls::run(
     {
         // TODO
     }
-    else if(name == "cc2500_init")
+    else if(name == "cc2500_init_hw")
         cc2500_init();
     else if(name == "cc2500_configure")
         cc2500_configure();

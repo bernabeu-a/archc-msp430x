@@ -430,7 +430,7 @@ void ac_behavior( instruction )
     //std::cout << std::endl;
     //std::cout << "pc=" << std::hex << ac_pc << std::endl;
     //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
-
+    
     std::cout << supply.voltage() << std::endl;
     switch(supply.get_state())
     {
@@ -458,6 +458,7 @@ void ac_behavior( instruction )
             // Reboot
             RB[REG_PC] = DM.read(0xfffe); // Reset vector
             ac_pc = RB[REG_PC];
+            ac_annul();
             return;
     }
 
