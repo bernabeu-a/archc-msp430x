@@ -34,10 +34,11 @@ static const elf_wl_functions_t whitelist{
 
     // cc2500
     "cc2500_init_hw",
-    "cc2500_configure",
-    "cc2500_idle",
-    "cc2500_sleep",
-    "cc2500_wakeup",
+    "cc2500_drv_restore_hw",
+    "cc2500_configure_hw",
+    "cc2500_idle_hw",
+    "cc2500_sleep_hw",
+    "cc2500_wakeup_hw",
     "cc2500_send_packet",
 
     // Energy
@@ -99,6 +100,10 @@ void Syscalls::run(
     }
     else if(name == "cc2500_init_hw")
         cc2500_init();
+    else if(name == "cc2500_drv_restore_hw")
+    {
+        // TODO
+    }
     else if(name == "cc2500_configure")
         cc2500_configure();
     else if(name == "cc2500_idle")
