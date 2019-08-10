@@ -22,6 +22,7 @@ class PowerSupply
 
         void set_lo_threshold(double v_threshold);
         void set_hi_threshold(double v_threshold);
+        void set_infinite_energy(bool infinite_energy);
 
     private:
         void update_state();
@@ -33,6 +34,7 @@ class PowerSupply
         double e_interrupt_threshold;
         double energy;
         power_supply_state_e state;
+        bool infinite_energy;
 };
 
 #endif

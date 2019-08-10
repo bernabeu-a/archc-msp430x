@@ -430,6 +430,8 @@ void ac_behavior( begin )
     syscalls = new Syscalls(platform, emanager);
     syscalls->print();
     erase_memory_on_boot(DM);
+    
+    supply.set_infinite_energy(true);
 }
 
 //!Behavior executed after simulation ends.
@@ -448,8 +450,8 @@ void ac_behavior( instruction )
     //std::cout << std::endl;
     //std::cout << "pc=" << std::hex << ac_pc << std::endl;
     //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
+    //std::cout << supply.voltage() << std::endl;
     
-    std::cout << supply.voltage() << std::endl;
     switch(supply.get_state())
     {
         case ON:

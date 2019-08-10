@@ -16,10 +16,13 @@ PowerSupply::PowerSupply(double capacitance, double supply_vcc, double v_lo_thre
 
 void PowerSupply::add_energy(double e)
 {
-    energy += e;
-    update_state();
+    if(!infinite_energy)
+    {
+        energy += e;
+        update_state();
 
-    // TODO clamp energy between 0 and e_max
+        // TODO clamp energy between 0 and e_max
+    }
 }
 
 void PowerSupply::refill()
@@ -53,6 +56,11 @@ void PowerSupply::set_hi_threshold(double v_threshold)
 {
     e_hi_threshold = capacitance * v_threshold * v_threshold / 2.;
     // TODO check threshold comparison
+}
+
+void PowerSupply::set_infinite_energy(bool i_energy)
+{
+    infinite_energy = i_energy;
 }
 
 void PowerSupply::update_state()
