@@ -12,8 +12,8 @@ class EnergyManager
     public:
         EnergyManager(EnergyLogger &logger, PowerSupply &supply, const platform_t &platform);
 
-        void add_cycles(size_t amount);
-        void transaction(size_t duration, size_t energy);
+        void add_cycles(size_t amount, size_t current_to_subtract);
+        void transaction(size_t duration, size_t energy, size_t current_to_subtract);
 
         void start_log();
         void stop_log();

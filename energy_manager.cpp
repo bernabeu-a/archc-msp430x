@@ -10,20 +10,20 @@ EnergyManager::EnergyManager(EnergyLogger &logger, PowerSupply &supply, const pl
 {
 }
 
-void EnergyManager::add_cycles(size_t amount)
+void EnergyManager::add_cycles(size_t amount, size_t current_to_subtract)
 {
     cycles += amount;
-    supply.add_energy(-1e-6 * amount * supply.vcc() * platform.current() / CLOCK_FREQ);
+    supply.add_energy(-1e-6 * amount * supply.vcc() * (platform.current() - current_to_subtract) / CLOCK_FREQ);
 }
 
-void EnergyManager::transaction(size_t duration, size_t energy)
+void EnergyManager::transaction(size_t duration, size_t energy, size_t current_to_subtract)
 {
     size_t current = energy*1e6 / (supply.vcc() * duration);
-    supply.add_energy(-1. * energy);
+    supply.add_energy(-energy);
 
     log(); // Log before
     log(current); // Beginning of the transaction
-    add_cycles(CLOCK_FREQ * duration); // Forward
+    add_cycles(CLOCK_FREQ * duration, current_to_subtract); // Forward
     log(current); // End of the transaction
     log(); // Log after
 }

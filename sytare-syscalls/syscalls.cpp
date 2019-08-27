@@ -168,7 +168,8 @@ void Syscalls::cc2500_init()
 {
     emanager.transaction(
         451,
-        10); // 10.318
+        10, // 10.318
+        platform.cc2500.current());
     platform.cc2500.init();
 }
 
@@ -176,7 +177,8 @@ void Syscalls::cc2500_configure()
 {
     emanager.transaction(
         575,
-        5); // 4.459
+        5, // 4.459
+        platform.cc2500.current());
     // TODO
 }
 
@@ -186,13 +188,15 @@ void Syscalls::cc2500_idle()
     {
         emanager.transaction(
             399,
-            3); // 3.088
+            3, // 3.088
+            platform.cc2500.current());
     }
     else // RX
     {
         emanager.transaction(
             112,
-            6); // 6.015
+            6, // 6.015
+            platform.cc2500.current());
     }
     platform.cc2500.idle();
 }
@@ -203,13 +207,15 @@ void Syscalls::cc2500_sleep()
     {
         emanager.transaction(
             25,
-            0); // 0.168
+            0, // 0.168
+            platform.cc2500.current());
     }
     else // RX
     {
         emanager.transaction(
             25,
-            1); // 1.088
+            1, // 1.088
+            platform.cc2500.current());
     }
     platform.cc2500.sleep();
 }
@@ -218,7 +224,8 @@ void Syscalls::cc2500_wakeup()
 {
     emanager.transaction(
         399,
-        3); // 3.088
+        3, // 3.088
+        platform.cc2500.current());
     platform.cc2500.wakeup();
 }
 
@@ -229,7 +236,10 @@ void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
     size_t duration = (size < 64 ?
         1263.170 + 38.080 * size:
         1646.238 + 32.014 * size);
-    emanager.transaction(duration, 48 + 2.393 * size);
+    emanager.transaction(
+        duration,
+        48 + 2.393 * size,
+        platform.cc2500.current());
 }
 
 void Syscalls::dma_memset(
@@ -242,7 +252,7 @@ void Syscalls::dma_memset(
 
     for(uint16_t i = len; i--;)
         DM.write_byte(dst++, val);
-    emanager.transaction((1 + 2*len) / MCLK_FREQ, 0);
+    emanager.transaction((1 + 2*len) / MCLK_FREQ, 0, 0);
 }
 
 void Syscalls::dma_memcpy(
@@ -255,7 +265,7 @@ void Syscalls::dma_memcpy(
 
     for(uint16_t i = len; i--;)
         DM.write_byte(dst++, DM.read_byte(src++));
-    emanager.transaction((1 + 2*len) / MCLK_FREQ, 0);
+    emanager.transaction((1 + 2*len) / MCLK_FREQ, 0, 0);
 }
 
 void Syscalls::energy_init()
