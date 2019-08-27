@@ -35,7 +35,7 @@ void EnergyManager::start_log()
 
 void EnergyManager::stop_log()
 {
-    logger.stop();
+    logger.stop(cycles, platform.current());
 }
 
 void EnergyManager::log(size_t temporary_current) 

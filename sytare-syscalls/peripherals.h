@@ -85,12 +85,17 @@ class CC2500: public Peripheral
 
         virtual size_t current() const;
 
+        bool is_idle() const;
+        bool is_sleep() const;
+        bool is_rx() const;
+
         // syscalls
         void init();
         void idle();
         void sleep();
         void wakeup();
         void send_packet(const uint8_t *buf, size_t size);
+
 
     private:
         enum {

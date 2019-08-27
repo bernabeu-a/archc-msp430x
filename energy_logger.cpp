@@ -14,10 +14,11 @@ void EnergyLogger::start(size_t cycles, size_t current)
         log(cycles, current, true);
 }
 
-void EnergyLogger::stop()
+void EnergyLogger::stop(size_t cycles, size_t current)
 {
     if(!enabled)
         std::cerr << "Oops EnergyLogger::stop in wrong state" << std::endl;
+    log(cycles, current, true);
     enabled = false;
 }
 

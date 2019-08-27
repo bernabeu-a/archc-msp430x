@@ -7,9 +7,6 @@
 #define REG_THIRD_PARAM  14
 #define REG_FOURTH_PARAM 15
 
-const float VCC = 3.3; // V
-const float Icpu_active = 1864e-6; // A
-const float Pcpu_active = VCC * Icpu_active;
 const float MCLK_FREQ = 24; // MHz
 
 static const elf_wl_functions_t whitelist{
@@ -104,13 +101,13 @@ void Syscalls::run(
     {
         // TODO
     }
-    else if(name == "cc2500_configure")
+    else if(name == "cc2500_configure_hw")
         cc2500_configure();
-    else if(name == "cc2500_idle")
+    else if(name == "cc2500_idle_hw")
         cc2500_idle();
-    else if(name == "cc2500_sleep")
+    else if(name == "cc2500_sleep_hw")
         cc2500_sleep();
-    else if(name == "cc2500_wakeup")
+    else if(name == "cc2500_wakeup_hw")
         cc2500_wakeup();
     else if(name == "cc2500_send_packet")
     {
@@ -169,35 +166,59 @@ void Syscalls::spi_init()
 
 void Syscalls::cc2500_init()
 {
-    const size_t duration = 225;
-    emanager.transaction(duration, 13 - duration * Pcpu_active);
+    emanager.transaction(
+        451,
+        10); // 10.318
     platform.cc2500.init();
 }
 
 void Syscalls::cc2500_configure()
 {
-    const size_t duration = 573;
-    emanager.transaction(duration, 7 - duration * Pcpu_active);
+    emanager.transaction(
+        575,
+        5); // 4.459
     // TODO
 }
 
 void Syscalls::cc2500_idle()
 {
-    const size_t duration = 110;
-    emanager.transaction(110, 7 - duration * Pcpu_active);
+    if(platform.cc2500.is_sleep())
+    {
+        emanager.transaction(
+            399,
+            3); // 3.088
+    }
+    else // RX
+    {
+        emanager.transaction(
+            112,
+            6); // 6.015
+    }
     platform.cc2500.idle();
 }
 
 void Syscalls::cc2500_sleep()
 {
-    emanager.transaction(20, 0);
+    if(platform.cc2500.is_idle())
+    {
+        emanager.transaction(
+            25,
+            0); // 0.168
+    }
+    else // RX
+    {
+        emanager.transaction(
+            25,
+            1); // 1.088
+    }
     platform.cc2500.sleep();
 }
 
 void Syscalls::cc2500_wakeup()
 {
-    const size_t duration = 395;
-    emanager.transaction(395, 5 - duration * Pcpu_active);
+    emanager.transaction(
+        399,
+        3); // 3.088
     platform.cc2500.wakeup();
 }
 
@@ -205,12 +226,10 @@ void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
 {
     platform.cc2500.send_packet(buf, size);
 
-    size_t duration;
-    if(size < 64)
-        duration = 1264.1 + 37.557 * size;
-    else
-        duration = 1690.9 + 30.794 * size;
-    emanager.transaction(duration, 50 + 2.379 * size - duration * Pcpu_active);
+    size_t duration = (size < 64 ?
+        1263.170 + 38.080 * size:
+        1646.238 + 32.014 * size);
+    emanager.transaction(duration, 48 + 2.393 * size);
 }
 
 void Syscalls::dma_memset(

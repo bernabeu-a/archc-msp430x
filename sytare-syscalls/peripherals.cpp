@@ -34,20 +34,20 @@ size_t Cpu::current() const
     switch(state)
     {
         case LPM0:
-            return 779;
+            return 278;
 
         case LPM1:
-            return 732;
+            return 233;
 
         case LPM2:
-            return 561;
+            return 66;
 
         case LPM3:
         case LPM4:
-            return 500;
+            return 8;
 
         default:
-            return 1864;
+            return 1224;
     }
 }
 
@@ -94,7 +94,7 @@ size_t Leds::current() const
     size_t n = 0;
     for(size_t i = 0; i < 8; ++i)
         n += ((value >> i) & 1);
-    return n * 1236;
+    return n * 1230;
 }
 
 void Leds::on(uint8_t n)
@@ -154,17 +154,34 @@ void CC2500::init()
 
 size_t CC2500::current() const
 {
+    //const size_t sleep_current = 215;
+    const size_t sleep_current = 0;
     switch(state)
     {
         case IDLE:
-            return 1675;
+            return sleep_current + 1603;
 
         case RX:
-            return 17563;
+            return sleep_current + 16709;
 
         default:
-            return 0;
+            return sleep_current;
     }
+}
+
+bool CC2500::is_idle() const
+{
+    return state == IDLE;
+}
+
+bool CC2500::is_sleep() const
+{
+    return state == SLEEP;
+}
+
+bool CC2500::is_rx() const
+{
+    return state == RX;
 }
 
 void CC2500::idle()

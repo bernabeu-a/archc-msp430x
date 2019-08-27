@@ -10,7 +10,7 @@ class EnergyLogger
         EnergyLogger(std::ostream &out);
 
         void start(size_t cycles, size_t current);
-        void stop();
+        void stop(size_t cycles, size_t current);
 
         void log(size_t cycles, size_t current);
 
