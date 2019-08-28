@@ -54,6 +54,17 @@ class Syscalls
         void cc2500_wakeup();
         void cc2500_send_packet(const uint8_t *buf, size_t size);
 
+        // Temperature
+        void temperature_init();
+        uint16_t temperature_sample();
+
+        // Accelerometer
+        void accelerometer_init();
+        void accelerometer_on();
+        void accelerometer_off();
+        void accelerometer_measure(Accelerometer::acquisition_t &data);
+        
+
         // DMA
         void dma_memset(
             ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,

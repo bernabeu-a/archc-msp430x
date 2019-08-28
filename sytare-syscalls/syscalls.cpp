@@ -6,6 +6,7 @@
 #define REG_SECOND_PARAM 13
 #define REG_THIRD_PARAM  14
 #define REG_FOURTH_PARAM 15
+#define REG_RETURN       12
 
 const float MCLK_FREQ = 24; // MHz
 
@@ -131,28 +132,23 @@ void Syscalls::run(
         cc2500_send_packet(buf.data(), size);
     }
     else if(name == "tmp_drv_init_hw")
-    {
-        // TODO
-    }
+        temperature_init();
     else if(name == "tmp_drv_sample")
-    {
-        // TODO
-    }
+        RB[REG_RETURN] = temperature_sample();
     else if(name == "accelerometer_init")
-    {
-        // TODO
-    }
+        accelerometer_init();
     else if(name == "accelerometer_on")
-    {
-        // TODO
-    }
+        accelerometer_on();
     else if(name == "accelerometer_off")
-    {
-        // TODO
-    }
+        accelerometer_off();
     else if(name == "accelerometer_measure")
     {
-        // TODO
+        uint16_t ptr = RB[REG_FIRST_PARAM];
+        Accelerometer::acquisition_t data;
+        accelerometer_measure(data);
+        DM.write(ptr + 0, data.x);
+        DM.write(ptr + 2, data.y);
+        DM.write(ptr + 4, data.z);
     }
     else if(name == "energy_init")
         energy_init();
@@ -265,8 +261,6 @@ void Syscalls::cc2500_wakeup()
 
 void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
 {
-    platform.cc2500.send_packet(buf, size);
-
     size_t duration = (size < 64 ?
         1263.170 + 38.080 * size:
         1646.238 + 32.014 * size);
@@ -274,6 +268,41 @@ void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
         duration,
         48 + 2.393 * size,
         platform.cc2500.current());
+
+    platform.cc2500.send_packet(buf, size);
+}
+
+void Syscalls::temperature_init()
+{
+    platform.temperature.init();
+}
+
+uint16_t Syscalls::temperature_sample()
+{
+    // TODO time & energy
+    return platform.temperature.sample();
+}
+
+void Syscalls::accelerometer_init()
+{
+    platform.accelerometer.init();
+}
+
+void Syscalls::accelerometer_on()
+{
+    // TODO time & energy
+    platform.accelerometer.on();
+}
+
+void Syscalls::accelerometer_off()
+{
+    // TODO time & energy
+    platform.accelerometer.off();
+}
+
+void Syscalls::accelerometer_measure(Accelerometer::acquisition_t &data)
+{
+    platform.accelerometer.measure(data);
 }
 
 void Syscalls::dma_memset(

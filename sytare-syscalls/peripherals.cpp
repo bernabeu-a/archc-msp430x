@@ -217,6 +217,55 @@ void CC2500::send_packet(const uint8_t *buf, size_t size)
     }
 }
 
+/******** Temperature ********/
+
+Temperature::Temperature()
+{
+}
+
+size_t Temperature::current() const
+{
+    return 0;
+}
+
+uint16_t Temperature::sample() const
+{
+    if(!check_initialized())
+        std::cerr << "Oops Temperature::sample, driver not initialized" << std::endl;
+    return 25;
+}
+
+/******** Accelerometer ********/
+
+Accelerometer::Accelerometer():
+    state(OFF)
+{
+}
+
+size_t Accelerometer::current() const
+{
+    return state == OFF ? 0 : 385; // 384.6 uA
+}
+
+void Accelerometer::on()
+{
+    if(check_initialized())
+        state = ON;
+}
+
+void Accelerometer::off()
+{
+    if(check_initialized())
+        state = OFF;
+}
+
+void Accelerometer::measure(acquisition_t &data) const
+{
+    data.x = 1;
+    data.y = 2;
+    data.z = 3;
+}
+
 /******** Energy ********/
 
 Energy::Energy():

@@ -105,6 +105,42 @@ class CC2500: public Peripheral
         } state;
 };
 
+class Temperature : public Peripheral
+{
+    public:
+        Temperature();
+
+        virtual size_t current() const;
+
+        // syscalls
+        uint16_t sample() const;
+};
+
+class Accelerometer : public Peripheral
+{
+    public:
+        Accelerometer();
+
+        virtual size_t current() const;
+
+        // structures
+        struct acquisition_t
+        {
+            uint16_t x, y, z;
+        };
+
+        // syscalls
+        void on();
+        void off();
+        void measure(acquisition_t &data) const;
+
+    private:
+        enum {
+            OFF,
+            ON
+        } state;
+};
+
 class Energy: public Peripheral
 {
     public:
@@ -128,11 +164,13 @@ struct platform_t
     Port port;
     Spi spi;
     CC2500 cc2500;
+    Temperature temperature;
+    Accelerometer accelerometer;
     Energy energy;
 
     size_t current() const
     {
-        return cpu.current() + leds.current() + port.current() + spi.current() + cc2500.current();
+        return cpu.current() + leds.current() + port.current() + spi.current() + cc2500.current() + temperature.current() + accelerometer.current();
     }
 };
 
