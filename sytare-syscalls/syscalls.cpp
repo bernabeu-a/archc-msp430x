@@ -38,6 +38,16 @@ static const elf_wl_functions_t whitelist{
     "cc2500_wakeup_hw",
     "cc2500_send_packet",
 
+    // Temperature
+    "tmp_drv_init_hw",
+    "tmp_drv_sample",
+
+    // Accelerometer
+    "accelerometer_init",
+    "accelerometer_on",
+    "accelerometer_off",
+    "accelerometer_measure",
+
     // Energy
     "energy_init",
     "energy_reduce_consumption",
@@ -119,6 +129,30 @@ void Syscalls::run(
             buf[i] = DM.read_byte(ptr++);
 
         cc2500_send_packet(buf.data(), size);
+    }
+    else if(name == "tmp_drv_init_hw")
+    {
+        // TODO
+    }
+    else if(name == "tmp_drv_sample")
+    {
+        // TODO
+    }
+    else if(name == "accelerometer_init")
+    {
+        // TODO
+    }
+    else if(name == "accelerometer_on")
+    {
+        // TODO
+    }
+    else if(name == "accelerometer_off")
+    {
+        // TODO
+    }
+    else if(name == "accelerometer_measure")
+    {
+        // TODO
     }
     else if(name == "energy_init")
         energy_init();
