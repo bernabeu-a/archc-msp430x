@@ -274,34 +274,55 @@ void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
 
 void Syscalls::temperature_init()
 {
+    emanager.transaction(
+        159,
+        0,
+        platform.temperature.current());
     platform.temperature.init();
 }
 
 uint16_t Syscalls::temperature_sample()
 {
-    // TODO time & energy
+    emanager.transaction(
+        76,
+        0,
+        platform.temperature.current());
     return platform.temperature.sample();
 }
 
 void Syscalls::accelerometer_init()
 {
+    emanager.transaction(
+        55,
+        0,
+        platform.accelerometer.current());
     platform.accelerometer.init();
 }
 
 void Syscalls::accelerometer_on()
 {
-    // TODO time & energy
+    emanager.transaction(
+        1025,
+        46,
+        platform.accelerometer.current());
     platform.accelerometer.on();
 }
 
 void Syscalls::accelerometer_off()
 {
-    // TODO time & energy
+    emanager.transaction(
+        10,
+        0,
+        platform.accelerometer.current());
     platform.accelerometer.off();
 }
 
 void Syscalls::accelerometer_measure(Accelerometer::acquisition_t &data)
 {
+    emanager.transaction(
+        171,
+        0,
+        platform.accelerometer.current());
     platform.accelerometer.measure(data);
 }
 
