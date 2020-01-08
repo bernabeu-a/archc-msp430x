@@ -55,6 +55,7 @@ class Leds: public Peripheral
         // syscalls
         void on(uint8_t n);
         void on();
+        void off(uint8_t n);
         void off();
 
     private:

@@ -14,6 +14,7 @@ static const elf_wl_functions_t whitelist{
     // Leds
     "leds_init",
     "led_on",
+    "led_off",
     "leds_on",
     "leds_off",
 
@@ -94,6 +95,8 @@ void Syscalls::run(
         leds_on();
     else if(name == "led_on")
         led_on(RB[REG_FIRST_PARAM]);
+    else if(name == "led_off")
+        led_off(RB[REG_FIRST_PARAM]);
     else if(name == "prt_drv_init_hw")
         port_init();
     else if(name == "spi_init_hw")
@@ -182,6 +185,11 @@ void Syscalls::leds_on()
 void Syscalls::led_on(uint8_t n)
 {
     platform.leds.on(n);
+}
+
+void Syscalls::led_off(uint8_t n)
+{
+    platform.leds.off(n);
 }
 
 void Syscalls::port_init()
@@ -369,7 +377,7 @@ void Syscalls::energy_start_measurements()
 
 void Syscalls::energy_stop_measurements()
 {
-    platform.energy.stop();
     emanager.stop_log();
+    platform.energy.stop();
 }
 

@@ -39,6 +39,7 @@ class Syscalls
         void leds_off();
         void leds_on();
         void led_on(uint8_t n);
+        void led_off(uint8_t n);
 
         // Port
         void port_init();
