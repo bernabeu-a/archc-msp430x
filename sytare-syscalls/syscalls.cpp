@@ -184,11 +184,19 @@ void Syscalls::leds_on()
 
 void Syscalls::led_on(uint8_t n)
 {
+    emanager.transaction(
+        8,
+        0,
+        platform.leds.current());
     platform.leds.on(n);
 }
 
 void Syscalls::led_off(uint8_t n)
 {
+    emanager.transaction(
+        8,
+        0,
+        platform.leds.current());
     platform.leds.off(n);
 }
 
