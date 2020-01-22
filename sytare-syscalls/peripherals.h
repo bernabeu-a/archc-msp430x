@@ -3,6 +3,10 @@
 
 #include <cstdint>
 
+typedef long int energy_t;
+typedef size_t current_t;
+typedef size_t duration_t;
+
 class Peripheral
 {
     public:
@@ -11,7 +15,7 @@ class Peripheral
         // syscalls
         virtual void init();
 
-        virtual size_t current() const = 0;
+        virtual current_t current_ua() const = 0;
 
     protected:
         bool check_initialized() const;
@@ -24,7 +28,7 @@ class Cpu: public Peripheral
     public:
         Cpu();
 
-        virtual size_t current() const;
+        virtual current_t current_ua() const;
 
         // syscalls
         void active();
@@ -50,7 +54,7 @@ class Leds: public Peripheral
     public:
         Leds();
 
-        virtual size_t current() const;
+        virtual current_t current_ua() const;
         
         // syscalls
         void on(uint8_t n);
@@ -67,7 +71,7 @@ class Port: public Peripheral
     public:
         Port();
 
-        virtual size_t current() const;
+        virtual current_t current_ua() const;
 };
 
 class Spi: public Peripheral
@@ -76,7 +80,7 @@ class Spi: public Peripheral
         Spi();
         // TODO: overload init() to make changes in Port device
 
-        virtual size_t current() const;
+        virtual current_t current_ua() const;
 };
 
 class CC2500: public Peripheral
@@ -84,7 +88,7 @@ class CC2500: public Peripheral
     public:
         CC2500();
 
-        virtual size_t current() const;
+        virtual current_t current_ua() const;
 
         bool is_idle() const;
         bool is_sleep() const;
@@ -111,7 +115,7 @@ class Temperature : public Peripheral
     public:
         Temperature();
 
-        virtual size_t current() const;
+        virtual current_t current_ua() const;
 
         // syscalls
         uint16_t sample() const;
@@ -122,7 +126,7 @@ class Accelerometer : public Peripheral
     public:
         Accelerometer();
 
-        virtual size_t current() const;
+        virtual current_t current_ua() const;
 
         // structures
         struct acquisition_t
@@ -147,7 +151,7 @@ class Energy: public Peripheral
     public:
         Energy();
 
-        virtual size_t current() const;
+        virtual current_t current_ua() const;
         bool is_measuring() const;
         
         // syscalls
@@ -169,9 +173,9 @@ struct platform_t
     Accelerometer accelerometer;
     Energy energy;
 
-    size_t current() const
+    current_t current_ua() const
     {
-        return cpu.current() + leds.current() + port.current() + spi.current() + cc2500.current() + temperature.current() + accelerometer.current();
+        return cpu.current_ua() + leds.current_ua() + port.current_ua() + spi.current_ua() + cc2500.current_ua() + temperature.current_ua() + accelerometer.current_ua();
     }
 };
 

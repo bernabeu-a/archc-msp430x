@@ -10,9 +10,9 @@
 
 struct syscall_consumption_t
 {
-    size_t energy;      // uJ
-    size_t max_current; // uA
-    size_t duration;    // us
+    energy_t energy_nj;
+    current_t max_current_ua;
+    duration_t duration_us;
 };
 
 class Syscalls

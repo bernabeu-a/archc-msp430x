@@ -29,7 +29,7 @@ Cpu::Cpu():
     init(); // Cpu is always initialized
 }
 
-size_t Cpu::current() const
+current_t Cpu::current_ua() const
 {
     switch(state)
     {
@@ -89,7 +89,7 @@ Leds::Leds():
 {
 }
 
-size_t Leds::current() const
+current_t Leds::current_ua() const
 {
     size_t n = 0;
     for(size_t i = 0; i < 8; ++i)
@@ -133,7 +133,7 @@ Port::Port()
 {
 }
 
-size_t Port::current() const
+current_t Port::current_ua() const
 {
     return 0;
 }
@@ -144,7 +144,7 @@ Spi::Spi()
 {
 }
 
-size_t Spi::current() const
+current_t Spi::current_ua() const
 {
     return 0;
 }
@@ -161,7 +161,7 @@ void CC2500::init()
     state = IDLE;
 }
 
-size_t CC2500::current() const
+current_t CC2500::current_ua() const
 {
     //const size_t sleep_current = 215;
     const size_t sleep_current = 0;
@@ -232,7 +232,7 @@ Temperature::Temperature()
 {
 }
 
-size_t Temperature::current() const
+current_t Temperature::current_ua() const
 {
     return 0;
 }
@@ -251,7 +251,7 @@ Accelerometer::Accelerometer():
 {
 }
 
-size_t Accelerometer::current() const
+current_t Accelerometer::current_ua() const
 {
     return state == OFF ? 0 : 385; // 384.6 uA
 }
@@ -282,7 +282,7 @@ Energy::Energy():
 {
 }
 
-size_t Energy::current() const
+current_t Energy::current_ua() const
 {
     return 0;
 }

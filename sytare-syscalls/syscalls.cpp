@@ -187,7 +187,7 @@ void Syscalls::led_on(uint8_t n)
     emanager.transaction(
         8,
         0,
-        platform.leds.current());
+        platform.leds.current_ua());
     platform.leds.on(n);
 }
 
@@ -196,7 +196,7 @@ void Syscalls::led_off(uint8_t n)
     emanager.transaction(
         8,
         0,
-        platform.leds.current());
+        platform.leds.current_ua());
     platform.leds.off(n);
 }
 
@@ -214,8 +214,8 @@ void Syscalls::cc2500_init()
 {
     emanager.transaction(
         451,
-        10, // 10.318
-        platform.cc2500.current());
+        10318,
+        platform.cc2500.current_ua());
     platform.cc2500.init();
 }
 
@@ -223,8 +223,8 @@ void Syscalls::cc2500_configure()
 {
     emanager.transaction(
         575,
-        5, // 4.459
-        platform.cc2500.current());
+        4459,
+        platform.cc2500.current_ua());
     // TODO
 }
 
@@ -234,15 +234,15 @@ void Syscalls::cc2500_idle()
     {
         emanager.transaction(
             399,
-            3, // 3.088
-            platform.cc2500.current());
+            3088,
+            platform.cc2500.current_ua());
     }
     else // RX
     {
         emanager.transaction(
             112,
-            6, // 6.015
-            platform.cc2500.current());
+            6015,
+            platform.cc2500.current_ua());
     }
     platform.cc2500.idle();
 }
@@ -253,15 +253,15 @@ void Syscalls::cc2500_sleep()
     {
         emanager.transaction(
             25,
-            0, // 0.168
-            platform.cc2500.current());
+            168,
+            platform.cc2500.current_ua());
     }
     else // RX
     {
         emanager.transaction(
             25,
-            1, // 1.088
-            platform.cc2500.current());
+            1088,
+            platform.cc2500.current_ua());
     }
     platform.cc2500.sleep();
 }
@@ -270,8 +270,8 @@ void Syscalls::cc2500_wakeup()
 {
     emanager.transaction(
         399,
-        3, // 3.088
-        platform.cc2500.current());
+        3088,
+        platform.cc2500.current_ua());
     platform.cc2500.wakeup();
 }
 
@@ -282,8 +282,8 @@ void Syscalls::cc2500_send_packet(const uint8_t *buf, size_t size)
         1646.238 + 32.014 * size);
     emanager.transaction(
         duration,
-        48 + 2.393 * size,
-        platform.cc2500.current());
+        48000 + 2393 * size,
+        platform.cc2500.current_ua());
 
     platform.cc2500.send_packet(buf, size);
 }
@@ -293,7 +293,7 @@ void Syscalls::temperature_init()
     emanager.transaction(
         159,
         0,
-        platform.temperature.current());
+        platform.temperature.current_ua());
     platform.temperature.init();
 }
 
@@ -301,8 +301,8 @@ uint16_t Syscalls::temperature_sample()
 {
     emanager.transaction(
         76,
-        0,
-        platform.temperature.current());
+        200,
+        platform.temperature.current_ua());
     return platform.temperature.sample();
 }
 
@@ -311,7 +311,7 @@ void Syscalls::accelerometer_init()
     emanager.transaction(
         55,
         0,
-        platform.accelerometer.current());
+        platform.accelerometer.current_ua());
     platform.accelerometer.init();
 }
 
@@ -319,8 +319,8 @@ void Syscalls::accelerometer_on()
 {
     emanager.transaction(
         1025,
-        46,
-        platform.accelerometer.current());
+        46000,
+        platform.accelerometer.current_ua());
     platform.accelerometer.on();
 }
 
@@ -329,7 +329,7 @@ void Syscalls::accelerometer_off()
     emanager.transaction(
         10,
         0,
-        platform.accelerometer.current());
+        platform.accelerometer.current_ua());
     platform.accelerometer.off();
 }
 
@@ -338,7 +338,7 @@ void Syscalls::accelerometer_measure(Accelerometer::acquisition_t &data)
     emanager.transaction(
         171,
         0,
-        platform.accelerometer.current());
+        platform.accelerometer.current_ua());
     platform.accelerometer.measure(data);
 }
 
