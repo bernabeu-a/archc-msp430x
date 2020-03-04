@@ -96,6 +96,15 @@ struct sr_flags_t
 
         // TODO out of LPM
     }
+
+    void dump(void) const
+    {
+        std::cout << "# SR" << std::endl
+                  << "  + V = " << V << std::endl
+                  << "  + N = " << V << std::endl
+                  << "  + Z = " << V << std::endl
+                  << "  + C = " << V << std::endl;
+    }
 };
 
 enum extension_state_e
@@ -365,6 +374,16 @@ static size_t doubleop_cycles(uint8_t as, uint8_t ad, uint8_t rsrc, uint8_t rdst
     return 0;
 }
 
+static size_t format2_0_cycles(uint8_t as)
+{
+    // Only for RRC, RRA, SWPB, SXT
+    if(as == 1)
+        return 1;
+    if(as == 1)
+        return 4;
+    return 3;
+}
+
 static void extension_to_repeat(
     const extension_t &extension,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
@@ -449,6 +468,7 @@ void ac_behavior( instruction )
 
     //std::cout << std::endl;
     //std::cout << "pc=" << std::hex << ac_pc << std::endl;
+
     //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
     //std::cout << supply.voltage() << std::endl;
     
@@ -577,7 +597,8 @@ void ac_behavior( ADDC )
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
-    operand_dst += operand_src + sr.C;
+    operand_src += sr.C;
+    operand_dst += operand_src;
 
     sr.set_Z(operand_dst == 0);
     if(bw)
@@ -613,7 +634,8 @@ void ac_behavior( SUB )
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
-    operand_dst += ~operand_src + 1;
+    operand_src = ~operand_src + 1;
+    operand_dst += operand_src;
 
     sr.set_Z(operand_dst == 0);
     if(bw)
@@ -649,7 +671,8 @@ void ac_behavior( SUBC )
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
-    operand_dst += ~operand_src + sr.C;
+    operand_src = ~operand_src + sr.C;
+    operand_dst += operand_src;
 
     sr.set_Z(operand_dst == 0);
     if(bw)
@@ -687,7 +710,8 @@ void ac_behavior( CMP )
 
     sr.set_C(operand_dst >= operand_src);
 
-    operand_dst += ~operand_src + 1;
+    operand_src = ~operand_src+1;
+    operand_dst += operand_src;
 
     sr.set_Z(operand_dst == 0);
     if(bw)
@@ -822,7 +846,31 @@ void ac_behavior( AND )
 //!Instruction RRC behavior method.
 void ac_behavior( RRC )
 {
-    std::cerr << "Oops (RRC)" << std::endl;
+    uint16_t operand = doubleop_source(DM, RB, ad, bw, rdst);
+    uint16_t operand_tmp = operand;
+    sr_flags_t sr(RB);
+
+    operand >>= 1;
+    if(bw)
+    {
+        operand |= (sr.C ? 0xff80 : 0x0);
+        sr.set_N(negative8(operand));
+        sr.set_V(overflow8(operand_tmp, operand_tmp, operand));
+    }
+    else
+    {
+        operand |= (sr.C << 15);
+        sr.set_N(negative16(operand));
+        sr.set_V(overflow16(operand_tmp, operand_tmp, operand));
+    }
+
+    sr.set_Z(operand == 0);
+    sr.set_C(operand != 0);
+
+    doubleop_dest(DM, RB, operand, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
+
+    emanager.add_cycles(ESTIMATE_PIPELINE(format2_0_cycles(ad)), 0);
 }
 
 //!Instruction RRA behavior method.
