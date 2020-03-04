@@ -855,17 +855,16 @@ void ac_behavior( RRC )
     {
         operand |= (sr.C ? 0xff80 : 0x0);
         sr.set_N(negative8(operand));
-        sr.set_V(overflow8(operand_tmp, operand_tmp, operand));
     }
     else
     {
         operand |= (sr.C << 15);
         sr.set_N(negative16(operand));
-        sr.set_V(overflow16(operand_tmp, operand_tmp, operand));
     }
 
+    sr.set_V(0);
     sr.set_Z(operand == 0);
-    sr.set_C(operand != 0);
+    sr.set_C(operand_tmp & 1);
 
     doubleop_dest(DM, RB, operand, ad, bw, rdst);
     ac_pc = RB[REG_PC];
@@ -876,7 +875,24 @@ void ac_behavior( RRC )
 //!Instruction RRA behavior method.
 void ac_behavior( RRA )
 {
-    std::cerr << "Oops (RRA)" << std::endl;
+    uint16_t operand = doubleop_source(DM, RB, ad, bw, rdst);
+    uint16_t operand_tmp = operand;
+    sr_flags_t sr(RB);
+
+    operand = ((operand & 0x8000) | (operand >> 1));
+    if(bw)
+        sr.set_N(negative8(operand));
+    else
+        sr.set_N(negative16(operand));
+
+    sr.set_V(0);
+    sr.set_Z(operand == 0);
+    sr.set_C(operand_tmp & 1);
+
+    doubleop_dest(DM, RB, operand, ad, bw, rdst);
+    ac_pc = RB[REG_PC];
+
+    emanager.add_cycles(ESTIMATE_PIPELINE(format2_0_cycles(ad)), 0);
 }
 
 //!Instruction PUSH behavior method.
