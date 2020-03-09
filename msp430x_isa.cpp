@@ -498,8 +498,8 @@ void ac_behavior( instruction )
 
     emanager.log();
 
-    std::cout << std::endl;
-    std::cout << "pc=" << std::hex << ac_pc << std::endl;
+    //std::cout << std::endl;
+    //std::cout << "pc=" << std::hex << ac_pc << std::endl;
 
     //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
     //std::cout << supply.voltage() << std::endl;
@@ -1133,36 +1133,40 @@ void ac_behavior( PUSHPOPM )
 
     if(!(subop & 0x1))
         std::cerr << "PUSHPOPM: address mode not supported." << std::endl;
-
+    /*
     std::cout << "PUSHPOP:" << std::endl
               << " n=" << std::dec << n << std::endl
               << " rdst=" << rdst << std::endl
               << " before: SP=" << std::hex << RB[REG_SP] << std::endl;
 
+    */
+
     if(!(subop & 0x2)) // PUSHM
     {
-        std::cout << " It's a pushm!" << std::endl;
+        //std::cout << " It's a pushm!" << std::endl;
         for(; n--; --rdst)
         {
-            std::cout << "  r" << std::dec << rdst << std::endl;
+            //std::cout << "  r" << std::dec << rdst << std::endl;
             RB[REG_SP] -= 2;
             DM.write(RB[REG_SP], RB[rdst]);
         }
     }
     else // POPM
     {
-        std::cout << " It's a popm!" << std::endl;
+        //std::cout << " It's a popm!" << std::endl;
         for(; n--; ++rdst)
         {
-            std::cout << "  r" << std::dec << rdst << std::endl;
+            //std::cout << "  r" << std::dec << rdst << std::endl;
             RB[rdst] = DM.read(RB[REG_SP]);
             RB[REG_SP] += 2;
         }
     }
     ac_pc = RB[REG_PC];
 
+    /*
     std::cout << " after: SP=" << std::hex << RB[REG_SP] << std::endl
               << std::endl;
+    */
 
     emanager.add_cycles(ESTIMATE_PIPELINE(3 + n1), 0);
 }
