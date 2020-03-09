@@ -1199,7 +1199,23 @@ void ac_behavior( RRAM )
 //!Instruction RRUM behavior method.
 void ac_behavior( RRUM )
 {
-    std::cerr << "Oops (RRUM)" << std::endl;
+    if(!w)
+        std::cerr << "Oops (RRUM.A)" << std::endl;
+
+    size_t n = n_1+1;
+    uint16_t operand = RB[dst];
+    sr_flags_t sr(RB);
+
+    sr.set_C(operand & (1 << n_1));
+    operand >>= n;
+
+    sr.set_N(negative16(operand));
+    sr.set_V(0);
+    sr.set_Z(operand == 0);
+
+    RB[dst] = operand;
+
+    emanager.add_cycles(ESTIMATE_PIPELINE(n), 0);
 }
 
 //!Instruction RLAM behavior method.
