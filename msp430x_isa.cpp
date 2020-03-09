@@ -545,6 +545,7 @@ void ac_behavior( Type_SimpleOp ) {}
 void ac_behavior( Type_Jump ) {}
 void ac_behavior( Type_PushPopM ){}
 void ac_behavior( Type_Extension ){}
+void ac_behavior( Type_Extended_II ){}
  
 //!Instruction MOV behavior method.
 void ac_behavior( MOV )
@@ -1181,5 +1182,29 @@ void ac_behavior( EXT )
 
     extension.state = EXT_RDY;
 
+}
+
+//!Instruction RRCM behavior method.
+void ac_behavior( RRCM )
+{
+    std::cerr << "Oops (RRCM)" << std::endl;
+}
+
+//!Instruction RRAM behavior method.
+void ac_behavior( RRAM )
+{
+    std::cerr << "Oops (RRAM)" << std::endl;
+}
+
+//!Instruction RRUM behavior method.
+void ac_behavior( RRUM )
+{
+    std::cerr << "Oops (RRUM)" << std::endl;
+}
+
+//!Instruction RLAM behavior method.
+void ac_behavior( RLAM )
+{
+    std::cerr << "Oops (RLAM)" << std::endl;
 }
 

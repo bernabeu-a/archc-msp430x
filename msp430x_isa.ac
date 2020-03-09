@@ -20,12 +20,16 @@ AC_ISA(msp430x){
   ac_format Type_Extension =
     "%op:5 %payload_h:4 %al:1 %payload_l:6";
 
+  ac_format Type_Extended_II =
+    "%c:4 %n_1:2 %id:2 %id1:3 %w:1 %dst:4";
+
   // MSP430
   ac_instr<Type_DoubleOp> MOV, ADD, ADDC, SUB, SUBC, CMP, DADD, BIT, BIC, BIS, XOR, AND;
   ac_instr<Type_SimpleOp> RRC, RRA, PUSH, SWPB, CALL, RETI, SXT;
   ac_instr<Type_Jump>     JZ, JNZ, JC, JNC, JN, JGE, JL, JMP;
   ac_instr<Type_PushPopM> PUSHPOPM;
   ac_instr<Type_Extension> EXT;
+  ac_instr<Type_Extended_II> RRCM, RRAM, RRUM, RLAM;
 
   //MSP430X specific register names
   ac_asm_map reg {
@@ -94,5 +98,10 @@ AC_ISA(msp430x){
     PUSHPOPM.set_decoder(op = 0x5);
 
     EXT.set_decoder(op = 0x3);
+
+    RRCM.set_decoder(c=0, id = 0, id1 = 2);
+    RRAM.set_decoder(c=0, id = 1, id1 = 2);
+    RLAM.set_decoder(c=0, id = 2, id1 = 2);
+    RRUM.set_decoder(c=0, id = 3, id1 = 2);
   };
 };
