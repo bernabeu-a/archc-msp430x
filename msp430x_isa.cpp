@@ -16,7 +16,7 @@
 #define REG_CG2 3
 
 const uint16_t SRAM_BEGIN  = 0x1000;
-const uint16_t SRAM_END    = 0xc200;
+const uint16_t SRAM_END    = 0x7000;
 
 const uint16_t PERIPH_BEGIN = 0x0000;
 const uint16_t PERIPH_END   = 0x1000;
@@ -444,8 +444,9 @@ static void extension_repeat(
 
 
 static void fire_interrupt(
-    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
-    ac_memory &DM)
+    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword> &RB,
+    ac_memory &DM,
+    size_t source_id)
 {
     // Push PC
     RB[REG_SP] -= 2;
@@ -459,9 +460,8 @@ static void fire_interrupt(
     sr.on_interrupt();
 
     // TODO: interrupt priority
-    // TODO: check interrupt vector
 
-    RB[REG_PC] = DM.read(0xfff8); // IV 53, comparator
+    RB[REG_PC] = DM.read(0xff80 + (source_id << 1));
 
     emanager.add_cycles(6, 0);
 }
@@ -481,7 +481,7 @@ static void erase_memory_on_boot(ac_memory &DM)
 //!Behavior executed before simulation begins.
 void ac_behavior( begin )
 {
-    mpu = new MPU(SRAM_BEGIN, SRAM_END, 16, DM);
+    mpu = new MPU(SRAM_BEGIN, SRAM_END, 16, RB, DM, fire_interrupt, 34);
 
     syscalls = new Syscalls(platform, emanager);
     syscalls->print();
@@ -521,7 +521,7 @@ void ac_behavior( instruction )
             if(sr.GIE)
             {
                 std::cout << "INTERRUPT" << std::endl;
-                fire_interrupt(RB, DM);
+                fire_interrupt(RB, DM, 60);
                 ac_pc = RB[REG_PC];
                 return;
             }
