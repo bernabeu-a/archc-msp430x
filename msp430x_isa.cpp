@@ -7,12 +7,19 @@
 #include "sytare-syscalls/syscalls.h"
 #include "energy_manager.h"
 #include "energy_logger.h"
+#include "mpu.h"
 
 #define REG_PC  0
 #define REG_SP  1
 #define REG_SR  2
 #define REG_CG1 REG_SR
 #define REG_CG2 3
+
+const uint16_t SRAM_BEGIN  = 0x1000;
+const uint16_t SRAM_END    = 0xc200;
+
+const uint16_t PERIPH_BEGIN = 0x0000;
+const uint16_t PERIPH_END   = 0x1000;
 
 //!'using namespace' statement to allow access to all msp430x-specific datatypes
 using namespace msp430x_parms;
@@ -157,6 +164,7 @@ static Syscalls *syscalls;
 static EnergyLogger elogger(std::cout);
 static PowerSupply supply(100, 3.3, 3.5, 4., 3.6);
 static EnergyManager emanager(elogger, supply, platform);
+static MPU *mpu;
 
 static inline size_t ESTIMATE_PIPELINE(size_t ncycles)
 {
@@ -204,7 +212,7 @@ static int16_t u10_to_i16(uint16_t u10)
 }
 
 static uint16_t doubleop_source(
-    ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
+    MPU *mpu,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
     uint16_t as, uint16_t bw, uint16_t rsrc)
 {
@@ -228,14 +236,14 @@ static uint16_t doubleop_source(
                 operand = 0x1;
             else
             {
-                uint16_t x = DM.read(RB[REG_PC]);
+                uint16_t x = mpu->read(RB[REG_PC]);
                 if(rsrc != REG_CG1)
                     x += RB[rsrc];
 
                 if(bw)
-                    operand = DM.read_byte(x);
+                    operand = mpu->read_byte(x);
                 else
-                    operand = DM.read(x);
+                    operand = mpu->read(x);
                 RB[REG_PC] += 2;
             }
             break;
@@ -248,9 +256,9 @@ static uint16_t doubleop_source(
             else
             {
                 if(bw)
-                    operand = DM.read_byte(RB[rsrc]);
+                    operand = mpu->read_byte(RB[rsrc]);
                 else
-                    operand = DM.read(RB[rsrc]);
+                    operand = mpu->read(RB[rsrc]);
             }
             break;
 
@@ -261,7 +269,7 @@ static uint16_t doubleop_source(
                 operand = 0x8;
             else
             {
-                operand = DM.read(RB[rsrc]);
+                operand = mpu->read(RB[rsrc]);
                 // /!\ Here, pc may change if rsrc==0, which is the expected behavior
                 // TODO: 20bit address mode?
                 if(rsrc == REG_PC || !bw)
@@ -280,7 +288,7 @@ static uint16_t doubleop_source(
 }
 
 static uint16_t doubleop_dest_operand(
-    ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
+    MPU *mpu,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
     uint16_t ad, uint16_t bw, uint16_t rdst)
 {
@@ -291,14 +299,14 @@ static uint16_t doubleop_dest_operand(
 
         case AM_INDEXED:
         {
-            uint16_t x = DM.read(RB[REG_PC]);
+            uint16_t x = mpu->read(RB[REG_PC]);
             if(rdst != REG_CG1)
                 x += RB[rdst];
 
             if(bw)
-                return DM.read_byte(x);
+                return mpu->read_byte(x);
             else
-                return DM.read(x);
+                return mpu->read(x);
         }
 
         default:
@@ -309,7 +317,7 @@ static uint16_t doubleop_dest_operand(
 }
 
 static void doubleop_dest(
-    ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword>& DM,
+    MPU *mpu,
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
     uint16_t operand,
     uint16_t ad, uint16_t bw, uint16_t rdst)
@@ -322,14 +330,14 @@ static void doubleop_dest(
 
         case AM_INDEXED:
         {
-            uint16_t x = DM.read(RB[REG_PC]);
+            uint16_t x = mpu->read(RB[REG_PC]);
             if(rdst != REG_CG1)
                 x += RB[rdst];
 
             if(bw)
-                DM.write_byte(x, operand);
+                mpu->write_byte(x, operand);
             else
-                DM.write(x, operand);
+                mpu->write(x, operand);
             RB[REG_PC] += 2;
             break;
         }
@@ -460,24 +468,21 @@ static void fire_interrupt(
 
 static void erase_memory_on_boot(ac_memory &DM)
 {
-    const uint16_t sram_begin  = 0x1c00;
-    const uint16_t sram_end    = 0x2000;
     const uint8_t  sram_canary = 0xde;
-
-    const uint16_t periph_begin = 0x0000;
-    const uint16_t periph_end   = 0x1000;
     const uint8_t  periph_canary = 0xad;
 
-    for(uint16_t i = sram_begin; i < sram_end; ++i)
+    for(uint16_t i = SRAM_BEGIN; i < SRAM_END; ++i)
         DM.write_byte(i, sram_canary);
 
-    for(uint16_t i = periph_begin; i < periph_end; ++i)
+    for(uint16_t i = PERIPH_BEGIN; i < PERIPH_END; ++i)
         DM.write_byte(i, periph_canary);
 }
 
 //!Behavior executed before simulation begins.
 void ac_behavior( begin )
 {
+    mpu = new MPU(SRAM_BEGIN, SRAM_END, 16, DM);
+
     syscalls = new Syscalls(platform, emanager);
     syscalls->print();
     erase_memory_on_boot(DM);
@@ -488,6 +493,7 @@ void ac_behavior( begin )
 //!Behavior executed after simulation ends.
 void ac_behavior( end )
 {
+    delete mpu;
     delete syscalls;
 }
 
@@ -550,17 +556,17 @@ void ac_behavior( Type_Extended_II ){}
 //!Instruction MOV behavior method.
 void ac_behavior( MOV )
 {
-    uint16_t operand = doubleop_source(DM, RB, as, bw, rsrc);
+    uint16_t operand = doubleop_source(mpu, RB, as, bw, rsrc);
 
     if(rdst == REG_PC && syscalls->is_syscall(operand)) // Syscall: run symbolically
     {
         // BR instruction
         std::cout << "SYSCALL: " << syscalls->get_name(operand) << std::endl;
-        doubleop_dest(DM, RB, RB[REG_PC], ad, bw, rdst); // PC = next(PC)
+        doubleop_dest(mpu, RB, RB[REG_PC], ad, bw, rdst); // PC = next(PC)
         syscalls->run(operand, DM, RB);
     }
     else
-        doubleop_dest(DM, RB, operand, ad, bw, rdst);
+        doubleop_dest(mpu, RB, operand, ad, bw, rdst);
 
     ac_pc = RB[REG_PC];
 
@@ -573,8 +579,8 @@ void ac_behavior( ADD )
     extension_repeat_t repeat;
     extension_repeat(extension, repeat, RB, as, ad, "ADD");
 
-    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
@@ -605,7 +611,7 @@ void ac_behavior( ADD )
     else
         sr.set_C(carry16(promoted_result));
 
-    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
     extension.state = EXT_NONE;
 
@@ -615,8 +621,8 @@ void ac_behavior( ADD )
 //!Instruction ADDC behavior method.
 void ac_behavior( ADDC )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
@@ -643,7 +649,7 @@ void ac_behavior( ADDC )
     else
         sr.set_C(carry16(promoted_result));
 
-    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
@@ -652,8 +658,8 @@ void ac_behavior( ADDC )
 //!Instruction SUB behavior method.
 void ac_behavior( SUB )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
@@ -680,7 +686,7 @@ void ac_behavior( SUB )
     else
         sr.set_C(carry16(promoted_result));
 
-    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
@@ -689,8 +695,8 @@ void ac_behavior( SUB )
 //!Instruction SUBC behavior method.
 void ac_behavior( SUBC )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
@@ -717,7 +723,7 @@ void ac_behavior( SUBC )
     else
         sr.set_C(carry16(promoted_result));
 
-    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
@@ -726,8 +732,8 @@ void ac_behavior( SUBC )
 //!Instruction CMP behavior method.
 void ac_behavior( CMP )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
@@ -749,7 +755,7 @@ void ac_behavior( CMP )
     }
 
     // Do not change the value
-    doubleop_dest(DM, RB, operand_tmp, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand_tmp, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true)), 0);
@@ -764,8 +770,8 @@ void ac_behavior( DADD )
 //!Instruction BIT behavior method.
 void ac_behavior( BIT )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t tmp = operand_dst;
     sr_flags_t sr(RB);
 
@@ -780,7 +786,7 @@ void ac_behavior( BIT )
         sr.set_N(negative16(operand_dst));
 
     // Do not change the value
-    doubleop_dest(DM, RB, tmp, ad, bw, rdst);
+    doubleop_dest(mpu, RB, tmp, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true)), 0);
@@ -789,12 +795,12 @@ void ac_behavior( BIT )
 //!Instruction BIC behavior method.
 void ac_behavior( BIC )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
 
     operand_dst &= ~operand_src;
 
-    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
@@ -803,12 +809,12 @@ void ac_behavior( BIC )
 //!Instruction BIS behavior method.
 void ac_behavior( BIS )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
 
     operand_dst |= operand_src;
 
-    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
@@ -817,8 +823,8 @@ void ac_behavior( BIS )
 //!Instruction XOR behavior method.
 void ac_behavior( XOR )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
@@ -837,7 +843,7 @@ void ac_behavior( XOR )
         sr.set_V(negative16(operand_src) && negative16(operand_tmp));
     }
 
-    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
@@ -846,8 +852,8 @@ void ac_behavior( XOR )
 //!Instruction AND behavior method.
 void ac_behavior( AND )
 {
-    uint16_t operand_src = doubleop_source(DM, RB, as, bw, rsrc);
-    uint16_t operand_dst = doubleop_dest_operand(DM, RB, ad, bw, rdst);
+    uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
+    uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     sr_flags_t sr(RB);
 
     operand_dst &= operand_src;
@@ -860,7 +866,7 @@ void ac_behavior( AND )
     else
         sr.set_N(negative16(operand_dst));
 
-    doubleop_dest(DM, RB, operand_dst, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
@@ -869,7 +875,7 @@ void ac_behavior( AND )
 //!Instruction RRC behavior method.
 void ac_behavior( RRC )
 {
-    uint16_t operand = doubleop_source(DM, RB, ad, bw, rdst);
+    uint16_t operand = doubleop_source(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand;
     sr_flags_t sr(RB);
 
@@ -889,7 +895,7 @@ void ac_behavior( RRC )
     sr.set_Z(operand == 0);
     sr.set_C(operand_tmp & 1);
 
-    doubleop_dest(DM, RB, operand, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(format2_0_cycles(ad)), 0);
@@ -912,7 +918,7 @@ void ac_behavior( RRA )
             std::cerr << "Oops, extension not supported yet." << std::endl;
     }
 
-    uint16_t operand = doubleop_source(DM, RB, ad, bw, rdst);
+    uint16_t operand = doubleop_source(mpu, RB, ad, bw, rdst);
     sr_flags_t sr(RB);
 
     for(size_t i = repeat.count; i--; )
@@ -929,7 +935,7 @@ void ac_behavior( RRA )
     sr.set_V(0);
     sr.set_Z(operand == 0);
 
-    doubleop_dest(DM, RB, operand, ad, bw, rdst);
+    doubleop_dest(mpu, RB, operand, ad, bw, rdst);
     ac_pc = RB[REG_PC];
     extension.state = EXT_NONE;
 
@@ -939,12 +945,12 @@ void ac_behavior( RRA )
 //!Instruction PUSH behavior method.
 void ac_behavior( PUSH )
 {
-    uint16_t operand = doubleop_source(DM, RB, ad, bw, rdst);
+    uint16_t operand = doubleop_source(mpu, RB, ad, bw, rdst);
     RB[REG_SP] -= 2;
     if(bw)
-        DM.write_byte(RB[REG_SP], operand);
+        mpu->write_byte(RB[REG_SP], operand);
     else
-        DM.write(RB[REG_SP], operand);
+        mpu->write(RB[REG_SP], operand);
     ac_pc = RB[REG_PC];
 
     emanager.add_cycles(ESTIMATE_PIPELINE(ad == AM_REGISTER ? 3 : 4), 0);
@@ -959,7 +965,7 @@ void ac_behavior( SWPB )
 //!Instruction CALL behavior method.
 void ac_behavior( CALL )
 {
-    uint16_t address = doubleop_source(DM, RB, ad, 0, rdst);
+    uint16_t address = doubleop_source(mpu, RB, ad, 0, rdst);
     if(syscalls->is_syscall(address)) // Syscall: run symbolically
     {
         std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
@@ -1148,7 +1154,7 @@ void ac_behavior( PUSHPOPM )
         {
             //std::cout << "  r" << std::dec << rdst << std::endl;
             RB[REG_SP] -= 2;
-            DM.write(RB[REG_SP], RB[rdst]);
+            mpu->write(RB[REG_SP], RB[rdst]);
         }
     }
     else // POPM
@@ -1157,7 +1163,7 @@ void ac_behavior( PUSHPOPM )
         for(; n--; ++rdst)
         {
             //std::cout << "  r" << std::dec << rdst << std::endl;
-            RB[rdst] = DM.read(RB[REG_SP]);
+            RB[rdst] = mpu->read(RB[REG_SP]);
             RB[REG_SP] += 2;
         }
     }
