@@ -11,9 +11,17 @@
 static void read_elf_entry(const std::string &s, uint16_t &address, std::string &name)
 {
     std::string tmp;
+    std::string fullname;
     std::istringstream iss(s);
-    iss >> tmp >> name;
+    iss >> tmp >> fullname;
     address = std::stol(tmp, nullptr, 16);
+
+    // Remove all suffixes (starting with '.' character)
+    size_t index = fullname.find('.');
+    if(index == std::string::npos)
+        name = fullname;
+    else
+        name = fullname.substr(0, index);
 }
 
 elf_functions_t read_functions_from_elf(const std::string &elf_filename, const elf_wl_functions_t &whitelist)
