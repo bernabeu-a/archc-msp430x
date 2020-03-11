@@ -83,6 +83,10 @@ class Syscalls
         void energy_start_measurements();
         void energy_stop_measurements();
 
+        // MPU
+        void mpu_block(uint16_t blockid);
+        void mpu_unblock(uint16_t blockid);
+
         elf_functions_t functions;
         platform_t &platform;
         EnergyManager &emanager;

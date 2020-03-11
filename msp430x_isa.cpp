@@ -7,7 +7,6 @@
 #include "sytare-syscalls/syscalls.h"
 #include "energy_manager.h"
 #include "energy_logger.h"
-#include "mpu.h"
 
 #define REG_PC  0
 #define REG_SP  1
@@ -159,11 +158,11 @@ enum addressing_mode_e
 };
 
 static extension_t extension;
-static platform_t platform;
+static platform_t *platform;
 static Syscalls *syscalls;
 static EnergyLogger elogger(std::cout);
 static PowerSupply supply(100, 3.3, 3.5, 4., 3.6);
-static EnergyManager emanager(elogger, supply, platform);
+static EnergyManager *emanager;
 static MPU *mpu;
 
 static inline size_t ESTIMATE_PIPELINE(size_t ncycles)
@@ -463,7 +462,7 @@ static void fire_interrupt(
 
     RB[REG_PC] = DM.read(0xff80 + (source_id << 1));
 
-    emanager.add_cycles(6, 0);
+    emanager->add_cycles(6, 0);
 }
 
 static void erase_memory_on_boot(ac_memory &DM)
@@ -482,8 +481,10 @@ static void erase_memory_on_boot(ac_memory &DM)
 void ac_behavior( begin )
 {
     mpu = new MPU(SRAM_BEGIN, SRAM_END, 16, RB, DM, fire_interrupt, 34);
+    platform = new platform_t(mpu);
+    emanager = new EnergyManager(elogger, supply, *platform);
 
-    syscalls = new Syscalls(platform, emanager);
+    syscalls = new Syscalls(*platform, *emanager);
     syscalls->print();
     erase_memory_on_boot(DM);
     
@@ -493,6 +494,8 @@ void ac_behavior( begin )
 //!Behavior executed after simulation ends.
 void ac_behavior( end )
 {
+    delete emanager;
+    delete platform;
     delete mpu;
     delete syscalls;
 }
@@ -502,7 +505,7 @@ void ac_behavior( instruction )
 {
     extension.tick();
 
-    emanager.log();
+    emanager->log();
 
     //std::cout << std::endl;
     //std::cout << "pc=" << std::hex << ac_pc << std::endl;
@@ -570,7 +573,7 @@ void ac_behavior( MOV )
 
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true)), 0);
 }
 
 //!Instruction ADD behavior method.
@@ -615,7 +618,7 @@ void ac_behavior( ADD )
     ac_pc = RB[REG_PC];
     extension.state = EXT_NONE;
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
 }
 
 //!Instruction ADDC behavior method.
@@ -652,7 +655,7 @@ void ac_behavior( ADDC )
     doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
 }
 
 //!Instruction SUB behavior method.
@@ -689,7 +692,7 @@ void ac_behavior( SUB )
     doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
 }
 
 //!Instruction SUBC behavior method.
@@ -726,7 +729,7 @@ void ac_behavior( SUBC )
     doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
 }
 
 //!Instruction CMP behavior method.
@@ -758,7 +761,7 @@ void ac_behavior( CMP )
     doubleop_dest(mpu, RB, operand_tmp, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true)), 0);
 }
 
 //!Instruction DADD behavior method.
@@ -789,7 +792,7 @@ void ac_behavior( BIT )
     doubleop_dest(mpu, RB, tmp, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, true)), 0);
 }
 
 //!Instruction BIC behavior method.
@@ -803,7 +806,7 @@ void ac_behavior( BIC )
     doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
 }
 
 //!Instruction BIS behavior method.
@@ -817,7 +820,7 @@ void ac_behavior( BIS )
     doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
 }
 
 //!Instruction XOR behavior method.
@@ -846,7 +849,7 @@ void ac_behavior( XOR )
     doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
 }
 
 //!Instruction AND behavior method.
@@ -869,7 +872,7 @@ void ac_behavior( AND )
     doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
 }
 
 //!Instruction RRC behavior method.
@@ -898,7 +901,7 @@ void ac_behavior( RRC )
     doubleop_dest(mpu, RB, operand, ad, bw, rdst);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(format2_0_cycles(ad)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(format2_0_cycles(ad)), 0);
 }
 
 //!Instruction RRA behavior method.
@@ -939,7 +942,7 @@ void ac_behavior( RRA )
     ac_pc = RB[REG_PC];
     extension.state = EXT_NONE;
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(format2_0_cycles(ad)), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(format2_0_cycles(ad)), 0);
 }
 
 //!Instruction PUSH behavior method.
@@ -953,7 +956,7 @@ void ac_behavior( PUSH )
         mpu->write(RB[REG_SP], operand);
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(ad == AM_REGISTER ? 3 : 4), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(ad == AM_REGISTER ? 3 : 4), 0);
 }
 
 //!Instruction SWPB behavior method.
@@ -981,11 +984,11 @@ void ac_behavior( CALL )
     ac_pc = RB[REG_PC];
 
     if(ad == AM_REGISTER)
-        emanager.add_cycles(ESTIMATE_PIPELINE(4), 0);
+        emanager->add_cycles(ESTIMATE_PIPELINE(4), 0);
     else if(rdst == REG_SR)
-        emanager.add_cycles(ESTIMATE_PIPELINE(6), 0);
+        emanager->add_cycles(ESTIMATE_PIPELINE(6), 0);
     else
-        emanager.add_cycles(ESTIMATE_PIPELINE(5), 0);
+        emanager->add_cycles(ESTIMATE_PIPELINE(5), 0);
 }
 
 //!Instruction RETI behavior method.
@@ -1000,7 +1003,7 @@ void ac_behavior( RETI )
     RB[REG_SP] += 2;
 
     ac_pc = RB[REG_PC];
-    emanager.add_cycles(ESTIMATE_PIPELINE(5), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(5), 0);
 }
 
 //!Instruction SXT behavior method.
@@ -1021,7 +1024,7 @@ void ac_behavior( JZ )
     }
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(2), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(2), 0);
 }
 
 //!Instruction JNZ behavior method.
@@ -1036,7 +1039,7 @@ void ac_behavior( JNZ )
     }
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(2), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(2), 0);
 }
 
 //!Instruction JC behavior method.
@@ -1051,7 +1054,7 @@ void ac_behavior( JC )
     }
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(2), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(2), 0);
 }
 
 //!Instruction JNC behavior method.
@@ -1066,7 +1069,7 @@ void ac_behavior( JNC )
     }
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(2), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(2), 0);
 }
 
 //!Instruction JN behavior method.
@@ -1081,7 +1084,7 @@ void ac_behavior( JN )
     }
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(2), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(2), 0);
 }
 
 //!Instruction JGE behavior method.
@@ -1096,7 +1099,7 @@ void ac_behavior( JGE )
     }
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(2), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(2), 0);
 }
 
 //!Instruction JL behavior method.
@@ -1111,7 +1114,7 @@ void ac_behavior( JL )
     }
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(2), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(2), 0);
 }
 
 //!Instruction JMP behavior method.
@@ -1128,7 +1131,7 @@ void ac_behavior( JMP )
         RB[REG_PC] = address;
     ac_pc = RB[REG_PC];
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(2), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(2), 0);
 }
 
 //!Instruction PUSHPOPM behavior method.
@@ -1174,7 +1177,7 @@ void ac_behavior( PUSHPOPM )
               << std::endl;
     */
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(3 + n1), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(3 + n1), 0);
 }
 
 //!Instruction EXT behavior method.
@@ -1225,7 +1228,7 @@ void ac_behavior( RRUM )
 
     RB[dst] = operand;
 
-    emanager.add_cycles(ESTIMATE_PIPELINE(n), 0);
+    emanager->add_cycles(ESTIMATE_PIPELINE(n), 0);
 }
 
 //!Instruction RLAM behavior method.

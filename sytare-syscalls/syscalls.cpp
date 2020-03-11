@@ -54,7 +54,11 @@ static const elf_wl_functions_t whitelist{
     "energy_init",
     "energy_reduce_consumption",
     "energy_start_measurements",
-    "energy_stop_measurements"
+    "energy_stop_measurements",
+
+    // MPU
+    "mpu_hw_block",
+    "mpu_hw_unblock"
 };
 
 Syscalls::Syscalls(platform_t &platform, EnergyManager &emanager):
@@ -161,6 +165,16 @@ void Syscalls::run(
         energy_start_measurements();
     else if(name == "energy_stop_measurements")
         energy_stop_measurements();
+    else if(name == "mpu_hw_block")
+    {
+        uint16_t blockid = RB[REG_FIRST_PARAM];
+        mpu_block(blockid);
+    }
+    else if(name == "mpu_hw_unblock")
+    {
+        uint16_t blockid = RB[REG_FIRST_PARAM];
+        mpu_unblock(blockid);
+    }
     else
     {
         std::cerr << "Oops: Unsupported syscall \"" << name << "\"" << std::endl;
@@ -387,5 +401,17 @@ void Syscalls::energy_stop_measurements()
 {
     emanager.stop_log();
     platform.energy.stop();
+}
+
+void Syscalls::mpu_block(uint16_t blockid)
+{
+    std::cout << "BLOCK(" << std::dec << blockid << ")" << std::endl;
+    platform.mpu->block(blockid);
+}
+
+void Syscalls::mpu_unblock(uint16_t blockid)
+{
+    std::cout << "UNBLOCK(" << std::dec << blockid << ")" << std::endl;
+    platform.mpu->unblock(blockid);
 }
 
