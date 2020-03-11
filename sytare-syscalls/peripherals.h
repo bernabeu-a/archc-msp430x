@@ -171,7 +171,6 @@ class MPU: public Peripheral
             uint32_t address_begin,
             uint32_t address_end,
             size_t segment_count,
-            ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword> &RB,
             ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword> &DM,
             interrupt_handler_t interrupt_handler,
             size_t interrupt_id);
@@ -190,8 +189,8 @@ class MPU: public Peripheral
 
     private:
         bool is_in_sram(uint32_t address, size_t &blockid);
+        void fault(uint32_t address);
 
-        ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword> &RB;
         ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword> &DM;
         uint32_t address_begin;
         uint32_t address_end;

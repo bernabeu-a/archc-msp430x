@@ -23,6 +23,26 @@ const uint16_t PERIPH_END   = 0x1000;
 //!'using namespace' statement to allow access to all msp430x-specific datatypes
 using namespace msp430x_parms;
 
+struct arch_context_t
+{
+    ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword> &DM;
+    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB;
+    ac_reg<unsigned> &ac_pc;
+    std::function<void()> ac_annul;
+
+    arch_context_t(
+        ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword> &DM,
+        ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
+        ac_reg<unsigned> &ac_pc,
+        std::function<void()> ac_annul):
+        DM(DM),
+        RB(RB),
+        ac_pc(ac_pc),
+        ac_annul(ac_annul)
+    {
+    }
+};
+
 struct sr_flags_t
 {
     // Never write to those fields firectly. Reading is fine.
@@ -156,6 +176,8 @@ enum addressing_mode_e
     AM_INDIRECT_INCR = 3,
     AM_INVALID
 };
+
+static arch_context_t *context = nullptr;
 
 static extension_t extension;
 static platform_t *platform;
@@ -441,28 +463,31 @@ static void extension_repeat(
     }
 }
 
-
-static void fire_interrupt(
-    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword> &RB,
-    ac_memory &DM,
-    size_t source_id)
+static void fire_interrupt(size_t source_id)
 {
+    std::cout << "interrupt" << std::endl;
+    std::cout << "pc = " << std::hex << context->RB[REG_PC] << std::endl;
+    std::cout << "a  = " << context->ac_pc << std::endl;
+
     // Push PC
-    RB[REG_SP] -= 2;
-    DM.write(RB[REG_SP], RB[REG_PC]);
+    context->RB[REG_SP] -= 2;
+    context->DM.write(context->RB[REG_SP], context->RB[REG_PC]);
 
     // Push SR
-    RB[REG_SP] -= 2;
-    DM.write(RB[REG_SP], RB[REG_SR]);
+    context->RB[REG_SP] -= 2;
+    context->DM.write(context->RB[REG_SP], context->RB[REG_SR]);
 
-    sr_flags_t sr(RB);
+    sr_flags_t sr(context->RB);
     sr.on_interrupt();
 
     // TODO: interrupt priority
 
-    RB[REG_PC] = DM.read(0xff80 + (source_id << 1));
+    context->RB[REG_PC] = context->DM.read(0xff80 + (source_id << 1));
+    context->ac_pc = context->RB[REG_PC];
 
     emanager->add_cycles(6, 0);
+
+    context->ac_annul();
 }
 
 static void erase_memory_on_boot(ac_memory &DM)
@@ -480,7 +505,7 @@ static void erase_memory_on_boot(ac_memory &DM)
 //!Behavior executed before simulation begins.
 void ac_behavior( begin )
 {
-    mpu = new MPU(SRAM_BEGIN, SRAM_END, 16, RB, DM, fire_interrupt, 34);
+    mpu = new MPU(SRAM_BEGIN, SRAM_END, 16, DM, fire_interrupt, 39);
     platform = new platform_t(mpu);
     emanager = new EnergyManager(elogger, supply, *platform);
 
@@ -503,12 +528,15 @@ void ac_behavior( end )
 //!Generic instruction behavior method.
 void ac_behavior( instruction )
 {
+    delete context;
+    context = new arch_context_t(DM, RB, ac_pc, std::bind(&msp430x_isa::ac_annul, this));
+
     extension.tick();
 
     emanager->log();
 
-    //std::cout << std::endl;
-    //std::cout << "pc=" << std::hex << ac_pc << std::endl;
+    std::cout << std::endl;
+    std::cout << "pc=" << std::hex << ac_pc << std::endl;
 
     //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
     //std::cout << supply.voltage() << std::endl;
@@ -524,8 +552,7 @@ void ac_behavior( instruction )
             if(sr.GIE)
             {
                 std::cout << "INTERRUPT" << std::endl;
-                fire_interrupt(RB, DM, 60);
-                ac_pc = RB[REG_PC];
+                fire_interrupt(60);
                 return;
             }
             break;

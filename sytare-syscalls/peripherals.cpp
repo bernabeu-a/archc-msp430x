@@ -324,12 +324,10 @@ MPU::MPU(
     uint32_t address_begin,
     uint32_t address_end,
     size_t segment_count,
-    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword> &RB,
     ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword> &DM,
     interrupt_handler_t interrupt_handler,
     size_t interrupt_id):
 
-    RB(RB),
     DM(DM),
     address_begin(address_begin),
     address_end(address_end),
@@ -359,7 +357,7 @@ void MPU::write(uint32_t address, uint16_t word)
 {
     size_t blockid;
     if(is_in_sram(address, blockid) && segments[blockid])
-        interrupt_handler(RB, DM, interrupt_id);
+        fault(address);
     DM.write(address, word);
 }
 
@@ -367,14 +365,14 @@ void MPU::write_byte(uint32_t address, uint8_t byte)
 {
     size_t blockid;
     if(is_in_sram(address, blockid) && segments[blockid])
-        interrupt_handler(RB, DM, interrupt_id);
+        fault(address);
     DM.write_byte(address, byte);
 }
 
 void MPU::block(size_t blockid)
 {
     if(blockid < segments.size())
-        segments[blockid] = false;
+        segments[blockid] = true;
     else
         std::cerr << "Oops MPU::block out-of-range (" << std::dec << blockid << ")"
                   << std::endl;
@@ -397,5 +395,14 @@ bool MPU::is_in_sram(uint32_t address, size_t &blockid)
         return true;
     }
     return false;
+}
+
+void MPU::fault(uint32_t address)
+{
+    const size_t EXMPU_VIOLATION_BLOCK = 0x04a0; // RTCCTL01
+    size_t blockid = (address - address_begin) / block_size;
+
+    DM.write(EXMPU_VIOLATION_BLOCK, blockid);
+    interrupt_handler(interrupt_id);
 }
 
