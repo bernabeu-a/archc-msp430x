@@ -29,6 +29,7 @@ struct arch_context_t
     ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB;
     ac_reg<unsigned> &ac_pc;
     std::function<void()> ac_annul;
+    uint16_t pc;
 
     arch_context_t(
         ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword> &DM,
@@ -183,7 +184,7 @@ static extension_t extension;
 static platform_t *platform;
 static Syscalls *syscalls;
 static EnergyLogger elogger(std::cout);
-static PowerSupply supply(100, 3.3, 3.5, 4., 3.6);
+static PowerSupply supply(100e3, 3.3, 3.5, 4., 3.6);
 static EnergyManager *emanager;
 static MPU *mpu;
 
@@ -463,15 +464,15 @@ static void extension_repeat(
     }
 }
 
-static void fire_interrupt(size_t source_id)
+// replay == true iff mpu
+// replay == false otherwise
+static void fire_interrupt(size_t source_id, bool replay)
 {
     std::cout << "interrupt" << std::endl;
-    std::cout << "pc = " << std::hex << context->RB[REG_PC] << std::endl;
-    std::cout << "a  = " << context->ac_pc << std::endl;
 
     // Push PC
     context->RB[REG_SP] -= 2;
-    context->DM.write(context->RB[REG_SP], context->RB[REG_PC]);
+    context->DM.write(context->RB[REG_SP], replay ? context->pc : context->RB[REG_PC]);
 
     // Push SR
     context->RB[REG_SP] -= 2;
@@ -513,7 +514,7 @@ void ac_behavior( begin )
     syscalls->print();
     erase_memory_on_boot(DM);
     
-    supply.set_infinite_energy(true);
+    supply.set_infinite_energy(false);
 }
 
 //!Behavior executed after simulation ends.
@@ -530,13 +531,14 @@ void ac_behavior( instruction )
 {
     delete context;
     context = new arch_context_t(DM, RB, ac_pc, std::bind(&msp430x_isa::ac_annul, this));
+    context->pc = ac_pc;
 
     extension.tick();
 
     emanager->log();
 
-    std::cout << std::endl;
-    std::cout << "pc=" << std::hex << ac_pc << std::endl;
+    //std::cout << std::endl;
+    //std::cout << "pc=" << std::hex << ac_pc << std::endl;
 
     //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
     //std::cout << supply.voltage() << std::endl;
@@ -551,8 +553,7 @@ void ac_behavior( instruction )
             sr_flags_t sr(RB);
             if(sr.GIE)
             {
-                std::cout << "INTERRUPT" << std::endl;
-                fire_interrupt(60);
+                fire_interrupt(60, false);
                 return;
             }
             break;

@@ -403,6 +403,6 @@ void MPU::fault(uint32_t address)
     size_t blockid = (address - address_begin) / block_size;
 
     DM.write(EXMPU_VIOLATION_BLOCK, blockid);
-    interrupt_handler(interrupt_id);
+    interrupt_handler(interrupt_id, true);
 }
 

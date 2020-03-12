@@ -6,7 +6,7 @@
 
 #include "msp430x_arch.H"
 
-typedef std::function<void(size_t)> interrupt_handler_t;
+typedef std::function<void(size_t, bool)> interrupt_handler_t;
 
 #endif
 
