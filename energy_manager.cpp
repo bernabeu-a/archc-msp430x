@@ -13,7 +13,7 @@ EnergyManager::EnergyManager(EnergyLogger &logger, PowerSupply &supply, const pl
 void EnergyManager::add_cycles(size_t amount, current_t current_to_subtract_ua)
 {
     cycles += amount;
-    energy_t energy_nj = -1e-3 * amount * supply.vcc() * (platform.current_ua() - current_to_subtract_ua) / CLOCK_FREQ_MHZ;
+    double energy_nj = -1e-3 * amount * supply.vcc() * (platform.current_ua() - current_to_subtract_ua) / CLOCK_FREQ_MHZ;
     supply.add_energy(energy_nj);
 }
 

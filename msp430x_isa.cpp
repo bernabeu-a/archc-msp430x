@@ -470,13 +470,10 @@ static void fire_interrupt(size_t source_id, bool replay)
 {
     std::cout << "interrupt" << std::endl;
 
-    // Push PC
-    context->RB[REG_SP] -= 2;
-    context->DM.write(context->RB[REG_SP], replay ? context->pc : context->RB[REG_PC]);
-
-    // Push SR
-    context->RB[REG_SP] -= 2;
-    context->DM.write(context->RB[REG_SP], context->RB[REG_SR]);
+    // Push PC and SR
+    context->DM.write(context->RB[REG_SP]-2, replay ? context->pc : context->RB[REG_PC]);
+    context->DM.write(context->RB[REG_SP]-4, context->RB[REG_SR]);
+    context->RB[REG_SP] -= 4;
 
     sr_flags_t sr(context->RB);
     sr.on_interrupt();
@@ -1022,13 +1019,10 @@ void ac_behavior( CALL )
 //!Instruction RETI behavior method.
 void ac_behavior( RETI )
 {
-    // Pop SR
+    // Pop SR and PC
     RB[REG_SR] = DM.read(RB[REG_SP]);
-    RB[REG_SP] += 2;
-
-    // Pop PC
-    RB[REG_PC] = DM.read(RB[REG_SP]);
-    RB[REG_SP] += 2;
+    RB[REG_PC] = DM.read(RB[REG_SP] + 2);
+    RB[REG_SP] += 4;
 
     ac_pc = RB[REG_PC];
     emanager->add_cycles(ESTIMATE_PIPELINE(5), 0);

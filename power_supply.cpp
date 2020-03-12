@@ -2,23 +2,24 @@
 
 #include "power_supply.h"
 
-PowerSupply::PowerSupply(double capacitance, double supply_vcc, double v_lo_threshold, double v_hi_threshold, double v_interrupt_threshold):
-    capacitance(capacitance),
-    supply_vcc(supply_vcc),
-    e_lo_threshold(capacitance * v_lo_threshold * v_lo_threshold / 2.),
-    e_hi_threshold(capacitance * v_hi_threshold * v_hi_threshold / 2.),
-    e_interrupt_threshold(capacitance * v_interrupt_threshold * v_interrupt_threshold / 2.),
+PowerSupply::PowerSupply(double capacitance_nF, double supply_vcc_V, double v_lo_threshold_V, double v_hi_threshold_V, double v_interrupt_threshold_V):
+    capacitance_nF(capacitance_nF),
+    supply_vcc_V(supply_vcc_V),
+    e_interrupt_threshold_nJ(capacitance_nF * v_interrupt_threshold_V * v_interrupt_threshold_V / 2.),
     state(ON) // Start on
 {
+    set_lo_threshold(v_lo_threshold_V);
+    set_hi_threshold(v_hi_threshold_V);
+
     refill(); // Start full
     // TODO check threshold comparison
 }
 
-void PowerSupply::add_energy(double e)
+void PowerSupply::add_energy(double e_nJ)
 {
     if(!infinite_energy)
     {
-        energy += e;
+        energy_nJ += e_nJ;
         update_state();
 
         // TODO clamp energy between 0 and e_max
@@ -27,18 +28,18 @@ void PowerSupply::add_energy(double e)
 
 void PowerSupply::refill()
 {
-    energy = e_hi_threshold;
+    energy_nJ = e_hi_threshold_nJ;
     state = ON;
 }
 
 double PowerSupply::voltage() const
 {
-    return sqrt(2. * energy / capacitance);
+    return sqrt(2. * energy_nJ / capacitance_nF);
 }
 
 double PowerSupply::vcc() const
 {
-    return supply_vcc;
+    return supply_vcc_V;
 }
 
 power_supply_state_e PowerSupply::get_state() const
@@ -46,15 +47,15 @@ power_supply_state_e PowerSupply::get_state() const
     return state;
 }
 
-void PowerSupply::set_lo_threshold(double v_threshold)
+void PowerSupply::set_lo_threshold(double v_threshold_V)
 {
-    e_lo_threshold = capacitance * v_threshold * v_threshold / 2.;
+    e_lo_threshold_nJ = capacitance_nF * v_threshold_V * v_threshold_V / 2.;
     // TODO check threshold comparison
 }
 
-void PowerSupply::set_hi_threshold(double v_threshold)
+void PowerSupply::set_hi_threshold(double v_threshold_V)
 {
-    e_hi_threshold = capacitance * v_threshold * v_threshold / 2.;
+    e_hi_threshold_nJ = capacitance_nF * v_threshold_V * v_threshold_V / 2.;
     // TODO check threshold comparison
 }
 
@@ -68,19 +69,19 @@ void PowerSupply::update_state()
     switch(state)
     {
         case ON:
-            if(energy <= e_lo_threshold)
+            if(energy_nJ <= e_lo_threshold_nJ)
                 state = OFF;
-            else if(energy <= e_interrupt_threshold)
+            else if(energy_nJ <= e_interrupt_threshold_nJ)
                 state = INTERRUPT;
             break;
 
         case INTERRUPT:
-            if(energy <= e_lo_threshold)
+            if(energy_nJ <= e_lo_threshold_nJ)
                 state = OFF;
             break;
 
         default: // OFF
-            if(energy >= e_hi_threshold)
+            if(energy_nJ >= e_hi_threshold_nJ)
             {
                 state = ON;
                 // TODO boot

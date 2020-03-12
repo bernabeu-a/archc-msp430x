@@ -11,9 +11,9 @@ enum power_supply_state_e
 class PowerSupply
 {
     public:
-        PowerSupply(double capacitance, double supply_vcc, double v_lo_threshold, double v_hi_threshold, double v_interrupt_threshold);
+        PowerSupply(double capacitance_nF, double supply_vcc_V, double v_lo_threshold_V, double v_hi_threshold_V, double v_interrupt_threshold_V);
 
-        void add_energy(double e);
+        void add_energy(double e_nJ);
         void refill();
 
         double voltage() const;
@@ -27,12 +27,12 @@ class PowerSupply
     private:
         void update_state();
 
-        double capacitance;
-        double supply_vcc;
-        double e_lo_threshold;
-        double e_hi_threshold;
-        double e_interrupt_threshold;
-        double energy;
+        double capacitance_nF;
+        double supply_vcc_V;
+        double e_lo_threshold_nJ;
+        double e_hi_threshold_nJ;
+        double e_interrupt_threshold_nJ;
+        double energy_nJ;
         power_supply_state_e state;
         bool infinite_energy;
 };
