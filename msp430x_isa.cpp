@@ -15,7 +15,7 @@
 #define REG_CG2 3
 
 const uint16_t SRAM_BEGIN  = 0x1000;
-const uint16_t SRAM_END    = 0x7000;
+const uint16_t SRAM_END    = 0x6000;
 
 const uint16_t PERIPH_BEGIN = 0x0000;
 const uint16_t PERIPH_END   = 0x1000;
