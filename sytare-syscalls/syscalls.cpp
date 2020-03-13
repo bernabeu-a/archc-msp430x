@@ -406,12 +406,12 @@ void Syscalls::energy_stop_measurements()
 void Syscalls::mpu_block(uint16_t blockid)
 {
     std::cout << "BLOCK(" << std::dec << blockid << ")" << std::endl;
-    platform.mpu->block(blockid);
+    platform.mpu.block(blockid);
 }
 
 void Syscalls::mpu_unblock(uint16_t blockid)
 {
     std::cout << "UNBLOCK(" << std::dec << blockid << ")" << std::endl;
-    platform.mpu->unblock(blockid);
+    platform.mpu.unblock(blockid);
 }
 

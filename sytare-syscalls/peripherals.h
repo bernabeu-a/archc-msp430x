@@ -210,16 +210,16 @@ struct platform_t
     Temperature temperature;
     Accelerometer accelerometer;
     Energy energy;
-    MPU *mpu;
+    MPU &mpu;
 
-    platform_t(MPU *mpu):
+    platform_t(MPU &mpu):
         mpu(mpu)
     {
     }
 
     current_t current_ua() const
     {
-        return cpu.current_ua() + leds.current_ua() + port.current_ua() + spi.current_ua() + cc2500.current_ua() + temperature.current_ua() + accelerometer.current_ua() + mpu->current_ua();
+        return cpu.current_ua() + leds.current_ua() + port.current_ua() + spi.current_ua() + cc2500.current_ua() + temperature.current_ua() + accelerometer.current_ua() + mpu.current_ua();
     }
 };
 

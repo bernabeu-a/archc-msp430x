@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cmath>
 
 #include "power_supply.h"
@@ -10,6 +11,10 @@ PowerSupply::PowerSupply(double capacitance_nF, double supply_vcc_V, double v_lo
 {
     set_lo_threshold(v_lo_threshold_V);
     set_hi_threshold(v_hi_threshold_V);
+
+    std::cout << "# Power supply" << std::endl
+              << std::dec << "  total      : " << (e_hi_threshold_nJ - e_lo_threshold_nJ) << " nJ" << std::endl
+              <<             "  until chkpt: " << (e_hi_threshold_nJ - e_interrupt_threshold_nJ) << " nJ" << std::endl << std::endl;
 
     refill(); // Start full
     // TODO check threshold comparison

@@ -7,6 +7,7 @@
 #include "sytare-syscalls/syscalls.h"
 #include "energy_manager.h"
 #include "energy_logger.h"
+#include "options.h"
 
 #define REG_PC  0
 #define REG_SP  1
@@ -184,7 +185,7 @@ static extension_t extension;
 static platform_t *platform;
 static Syscalls *syscalls;
 static EnergyLogger elogger(std::cout);
-static PowerSupply supply(100e3, 3.3, 3.5, 4., 3.6);
+static PowerSupply *supply;
 static EnergyManager *emanager;
 static MPU *mpu;
 
@@ -503,24 +504,32 @@ static void erase_memory_on_boot(ac_memory &DM)
 //!Behavior executed before simulation begins.
 void ac_behavior( begin )
 {
-    mpu = new MPU(SRAM_BEGIN, SRAM_END, 16, DM, fire_interrupt, 39);
-    platform = new platform_t(mpu);
-    emanager = new EnergyManager(elogger, supply, *platform);
+    extern options_t *power_options; // Given by main.cpp
 
+    mpu = new MPU(SRAM_BEGIN, SRAM_END, 16, DM, fire_interrupt, 39);
+    platform = new platform_t(*mpu);
+    supply = new PowerSupply(
+        power_options->capacitance_nF,
+        3.3,
+        power_options->v_lo_V,
+        power_options->v_hi_V,
+        power_options->v_thres_V);
+    emanager = new EnergyManager(elogger, *supply, *platform);
     syscalls = new Syscalls(*platform, *emanager);
     syscalls->print();
     erase_memory_on_boot(DM);
     
-    supply.set_infinite_energy(false);
+    supply->set_infinite_energy(false);
 }
 
 //!Behavior executed after simulation ends.
 void ac_behavior( end )
 {
+    delete syscalls;
     delete emanager;
+    delete supply;
     delete platform;
     delete mpu;
-    delete syscalls;
 }
 
 //!Generic instruction behavior method.
@@ -538,9 +547,9 @@ void ac_behavior( instruction )
     //std::cout << "pc=" << std::hex << ac_pc << std::endl;
 
     //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
-    //std::cout << supply.voltage() << std::endl;
+    //std::cout << supply->voltage() << std::endl;
     
-    switch(supply.get_state())
+    switch(supply->get_state())
     {
         case ON:
             break;
@@ -557,7 +566,7 @@ void ac_behavior( instruction )
         }
 
         default: // OFF
-            supply.refill();
+            supply->refill();
 
             std::cout << "REBOOT" << std::endl;
 
