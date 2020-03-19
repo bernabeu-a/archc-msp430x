@@ -58,7 +58,9 @@ static const elf_wl_functions_t whitelist{
 
     // MPU
     "mpu_hw_block",
-    "mpu_hw_unblock"
+    "mpu_hw_unblock",
+
+    "syt_shutdown_platform"
 };
 
 Syscalls::Syscalls(platform_t &platform, EnergyManager &emanager):
@@ -174,6 +176,10 @@ void Syscalls::run(
     {
         uint16_t blockid = RB[REG_FIRST_PARAM];
         mpu_unblock(blockid);
+    }
+    else if(name == "syt_shutdown_platform")
+    {
+        emanager.force_reboot();
     }
     else
     {

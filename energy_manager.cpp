@@ -44,3 +44,8 @@ void EnergyManager::log(current_t temporary_current_ua)
     logger.log(cycles, platform.current_ua() + temporary_current_ua);
 }
 
+void EnergyManager::force_reboot()
+{
+    supply.force_reboot();
+}
+

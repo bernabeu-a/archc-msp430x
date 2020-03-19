@@ -94,3 +94,8 @@ void PowerSupply::update_state()
     }
 }
 
+void PowerSupply::force_reboot()
+{
+    state = OFF;
+}
+

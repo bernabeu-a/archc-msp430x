@@ -24,6 +24,8 @@ class PowerSupply
         void set_hi_threshold(double v_threshold);
         void set_infinite_energy(bool infinite_energy);
 
+        void force_reboot();
+
     private:
         void update_state();
 

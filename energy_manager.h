@@ -18,6 +18,8 @@ class EnergyManager
         void start_log();
         void stop_log();
         void log(current_t temporary_current_ua = 0);
+        
+        void force_reboot();
 
     private:
         size_t cycles;
