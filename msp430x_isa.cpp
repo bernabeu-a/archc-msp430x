@@ -7,6 +7,7 @@
 #include "sytare-syscalls/syscalls.h"
 #include "energy_manager.h"
 #include "energy_logger.h"
+#include "commands.h"
 #include "options.h"
 
 #define REG_PC  0
@@ -187,6 +188,7 @@ static Syscalls *syscalls;
 static EnergyLogger elogger(std::cout);
 static PowerSupply *supply;
 static EnergyManager *emanager;
+static Commands *commands;
 static MPU *mpu;
 
 static inline size_t ESTIMATE_PIPELINE(size_t ncycles)
@@ -453,12 +455,12 @@ static void extension_repeat(
 
     if(extension.state == EXT_RUN)
     {
-        std::cout << "Extended " << instruction_name << std::endl;
+        //std::cout << "Extended " << instruction_name << std::endl;
 
         if(as == 0 && ad == 0)
         {
             extension_to_repeat(extension, RB, repeat.zc, repeat.al, repeat.count);
-            std::cout << " " << std::dec << repeat.count << " times" << std::endl;
+            //std::cout << " " << std::dec << repeat.count << " t imes" << std::endl;
         }
         else
             std::cerr << "Oops, extension not supported yet." << std::endl;
@@ -515,6 +517,7 @@ void ac_behavior( begin )
         power_options->v_hi_V,
         power_options->v_thres_V);
     emanager = new EnergyManager(elogger, *supply, *platform);
+    commands = new Commands(*emanager);
     syscalls = new Syscalls(*platform, *emanager);
     syscalls->print();
     erase_memory_on_boot(DM);
@@ -526,6 +529,7 @@ void ac_behavior( begin )
 void ac_behavior( end )
 {
     delete syscalls;
+    delete commands;
     delete emanager;
     delete supply;
     delete platform;
@@ -598,7 +602,7 @@ void ac_behavior( MOV )
     if(rdst == REG_PC && syscalls->is_syscall(operand)) // Syscall: run symbolically
     {
         // BR instruction
-        std::cout << "SYSCALL: " << syscalls->get_name(operand) << std::endl;
+        //std::cout << "SYSCALL: " << syscalls->get_name(operand) << std::endl;
         doubleop_dest(mpu, RB, RB[REG_PC], ad, bw, rdst); // PC = next(PC)
         syscalls->run(operand, DM, RB);
     }
@@ -944,12 +948,12 @@ void ac_behavior( RRA )
     extension_repeat_t repeat;
     if(extension.state == EXT_RUN)
     {
-        std::cout << "Extended RRA" << std::endl;
+        //std::cout << "Extended RRA" << std::endl;
 
         if(ad == 0)
         {
             extension_to_repeat(extension, RB, repeat.zc, repeat.al, repeat.count);
-            std::cout << " " << std::dec << repeat.count << " times" << std::endl;
+            //std::cout << " " << std::dec << repeat.count << " times" << std::endl;
         }
         else
             std::cerr << "Oops, extension not supported yet." << std::endl;
@@ -1003,9 +1007,12 @@ void ac_behavior( SWPB )
 void ac_behavior( CALL )
 {
     uint16_t address = doubleop_source(mpu, RB, ad, 0, rdst);
-    if(syscalls->is_syscall(address)) // Syscall: run symbolically
+    if(commands->run(address)) // Program issued a simulation command
     {
-        std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
+    }
+    else if(syscalls->is_syscall(address)) // Syscall: run symbolically
+    {
+        //std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
         syscalls->run(address, DM, RB);
     }
     else // Actually run the call
@@ -1155,7 +1162,7 @@ void ac_behavior( JMP )
     uint16_t address = RB[REG_PC] + signed_offset;
     if(syscalls->is_syscall(address)) // Syscall: run symbolically
     {
-        std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
+        //std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
         syscalls->run(address, DM, RB);
     }
     else // Actually run the call
@@ -1218,7 +1225,7 @@ void ac_behavior( EXT )
     extension.payload_l = payload_l;
     extension.al        = al;
 
-    std::cout << "Extension!" << std::endl;
+    //std::cout << "Extension!" << std::endl;
     if(extension.state != EXT_NONE)
         std::cerr << "Bad extension state (Oops)" << std::endl;
     if(!al)
