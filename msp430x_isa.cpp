@@ -16,8 +16,8 @@
 #define REG_CG1 REG_SR
 #define REG_CG2 3
 
-const uint16_t SRAM_BEGIN  = 0x1000;
-const uint16_t SRAM_END    = 0x6000;
+const uint16_t SRAM_BEGIN  = 0x1c00;
+const uint16_t SRAM_END    = 0x2000;
 
 const uint16_t PERIPH_BEGIN = 0x0000;
 const uint16_t PERIPH_END   = 0x1000;
@@ -571,6 +571,7 @@ void ac_behavior( instruction )
 
         default: // OFF
             supply->refill();
+            emanager->stop_log();
 
             std::cout << "REBOOT" << std::endl;
 

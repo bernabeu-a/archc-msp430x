@@ -19,7 +19,13 @@ void EnergyManager::add_cycles(size_t amount, current_t current_to_subtract_ua)
 
 void EnergyManager::transaction(duration_t duration_us, energy_t energy_nj, current_t current_to_subtract_ua)
 {
-    size_t current_ua = energy_nj * 1e3 / (supply.vcc() * duration_us);
+    size_t current_ua;
+    if(duration_us > 0)
+        current_ua = energy_nj * 1e3 / (supply.vcc() * duration_us);
+    else if(energy_nj == 0)
+        current_ua = 0;
+    else
+        std::cerr << "Oops EnergyManager::transacttion: duration_us == 0 && energy_nj != 0" << std::endl;
     supply.add_energy(-energy_nj);
 
     log(); // Log before

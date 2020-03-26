@@ -383,6 +383,8 @@ void Syscalls::dma_memcpy(
     if(!len)
         return;
 
+    //std::cout << std::hex << "memcpy( " << dst << ", " << src << ", " << len << ")" << std::endl;
+
     for(uint16_t i = len; i--;)
         DM.write_byte(dst++, DM.read_byte(src++));
     emanager.transaction((1 + 2*len) / MCLK_FREQ, 0, 0);

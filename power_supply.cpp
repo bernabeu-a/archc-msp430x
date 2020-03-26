@@ -27,6 +27,9 @@ void PowerSupply::add_energy(double e_nJ)
         energy_nJ += e_nJ;
         update_state();
 
+        if(energy_nJ < e_lo_threshold_nJ)
+            energy_nJ = e_lo_threshold_nJ - 1;
+
         // TODO clamp energy between 0 and e_max
     }
 }
