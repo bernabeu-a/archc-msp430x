@@ -61,3 +61,36 @@ elf_functions_t read_functions_from_args(int , char **, const elf_wl_functions_t
     return read_functions_from_elf(appfilename, whitelist);
 }
 
+void locate_text_from_elf(const std::string &elf_filename, uint16_t &address_begin, size_t &size)
+{
+    std::ostringstream command;
+    command << "readelf -S \"" << elf_filename << "\" | awk '$3==\".text\" {print $5, $7}'";
+
+    FILE *fp = popen(command.str().c_str(), "r");
+    if(fp != NULL)
+    {
+        char *line = NULL;
+        size_t linesize = 0;
+        if(getline(&line, &linesize, fp) >= 0)
+        {
+            std::string s_address_begin;
+            std::string s_size;
+
+            std::istringstream iss(line);
+            iss >> s_address_begin >> s_size;
+            address_begin = std::stol(s_address_begin, nullptr, 16);
+            size = std::stol(s_size, nullptr, 16);
+
+            free(line);
+        }
+        pclose(fp);
+    }
+    else
+        std::cerr << "Cannot run command `" << command.str() << "`" << std::endl;
+}
+
+void locate_text_from_args(int, char **, uint16_t &address_begin, size_t &size)
+{
+    extern char *appfilename;
+    return locate_text_from_elf(appfilename, address_begin, size);
+}

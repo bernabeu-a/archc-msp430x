@@ -198,6 +198,9 @@ class MPU: public Peripheral
         std::vector<bool> segments; // false => unlocked, true => locked
         interrupt_handler_t interrupt_handler;
         size_t interrupt_id;
+
+        uint16_t text_begin;
+        uint16_t text_end;
 };
 
 struct platform_t

@@ -372,8 +372,10 @@ void Syscalls::dma_memset(
     if(!len)
         return;
 
+    std::cout << std::hex << "memset( " << dst << ", " << val << ", " << len << ")" << std::endl;
+
     for(uint16_t i = len; i--;)
-        DM.write_byte(dst++, val);
+        platform.mpu.write_byte(dst++, val);
     emanager.transaction((1 + 2*len) / MCLK_FREQ, 0, 0);
 }
 
@@ -385,10 +387,10 @@ void Syscalls::dma_memcpy(
     if(!len)
         return;
 
-    //std::cout << std::hex << "memcpy( " << dst << ", " << src << ", " << len << ")" << std::endl;
+    std::cout << std::hex << "memcpy( " << dst << ", " << src << ", " << len << ")" << std::endl;
 
     for(uint16_t i = len; i--;)
-        DM.write_byte(dst++, DM.read_byte(src++));
+        platform.mpu.write_byte(dst++, DM.read_byte(src++));
     emanager.transaction((1 + 2*len) / MCLK_FREQ, 0, 0);
 }
 

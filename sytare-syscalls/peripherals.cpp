@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "peripherals.h"
+#include "utils/elfreader.h"
 
 Peripheral::Peripheral():
     initialized(false)
@@ -100,10 +101,7 @@ current_t Leds::current_ua() const
 void Leds::on(uint8_t n)
 {
     if(check_initialized())
-    {
         value |= (1 << (n-1));
-        std::cout << "New led value: " << std::dec << (int) value << std::endl;
-    }
 }
 
 void Leds::on()
@@ -115,10 +113,7 @@ void Leds::on()
 void Leds::off(uint8_t n)
 {
     if(check_initialized())
-    {
         value &= ~(1 << (n-1));
-        std::cout << "New led value: " << std::dec << (int) value << std::endl;
-    }
 }
 
 void Leds::off()
@@ -336,6 +331,9 @@ MPU::MPU(
     interrupt_handler(interrupt_handler),
     interrupt_id(interrupt_id)
 {
+    size_t size;
+    locate_text_from_args(0, nullptr, text_begin, size);
+    text_end = text_begin + size;
 }
 
 current_t MPU::current_ua() const
@@ -355,6 +353,9 @@ uint8_t MPU::read_byte(uint32_t address) const
 
 void MPU::write(uint32_t address, uint16_t word)
 {
+    if(address >= text_begin && address < text_end)
+        std::cerr << "Write to .text!" << std::endl;
+    
     size_t blockid;
     if(is_in_sram(address, blockid) && segments[blockid])
         fault(address);
@@ -363,6 +364,9 @@ void MPU::write(uint32_t address, uint16_t word)
 
 void MPU::write_byte(uint32_t address, uint8_t byte)
 {
+    if(address >= text_begin && address < text_end)
+        std::cerr << "Byte-write to .text!" << std::endl;
+    
     size_t blockid;
     if(is_in_sram(address, blockid) && segments[blockid])
         fault(address);

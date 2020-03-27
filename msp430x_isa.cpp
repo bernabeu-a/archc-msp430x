@@ -604,7 +604,7 @@ void ac_behavior( MOV )
     if(rdst == REG_PC && syscalls->is_syscall(operand)) // Syscall: run symbolically
     {
         // BR instruction
-        //std::cout << "SYSCALL: " << syscalls->get_name(operand) << std::endl;
+        std::cout << "SYSCALL: " << syscalls->get_name(operand) << std::endl;
         doubleop_dest(mpu, RB, RB[REG_PC], ad, bw, rdst); // PC = next(PC)
         syscalls->run(operand, DM, RB);
     }
@@ -1011,10 +1011,12 @@ void ac_behavior( CALL )
     uint16_t address = doubleop_source(mpu, RB, ad, 0, rdst);
     if(commands->run(address)) // Program issued a simulation command
     {
+        ac_pc = RB[REG_PC];
+        return;
     }
     else if(syscalls->is_syscall(address)) // Syscall: run symbolically
     {
-        //std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
+        std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
         syscalls->run(address, DM, RB);
     }
     else // Actually run the call
@@ -1164,7 +1166,7 @@ void ac_behavior( JMP )
     uint16_t address = RB[REG_PC] + signed_offset;
     if(syscalls->is_syscall(address)) // Syscall: run symbolically
     {
-        //std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
+        std::cout << "SYSCALL: " << syscalls->get_name(address) << std::endl;
         syscalls->run(address, DM, RB);
     }
     else // Actually run the call
