@@ -13,13 +13,11 @@ const float MCLK_FREQ = 24; // MHz
 static const elf_wl_functions_t whitelist{
     // Leds
     "leds_init",
-    "led_on",
-    "led_off",
-    "leds_on",
-    "leds_off",
 
     // Port
     "prt_drv_init_hw",
+    "prt_out_bic",
+    "prt_out_bis",
 
     // Spi
     "spi_init_hw",
@@ -95,16 +93,12 @@ void Syscalls::run(
     std::string name = get_name(address);
     if(name == "leds_init")
         leds_init();
-    else if(name == "leds_off")
-        leds_off();
-    else if(name == "leds_on")
-        leds_on();
-    else if(name == "led_on")
-        led_on(RB[REG_FIRST_PARAM]);
-    else if(name == "led_off")
-        led_off(RB[REG_FIRST_PARAM]);
     else if(name == "prt_drv_init_hw")
         port_init();
+    else if(name == "prt_out_bic")
+        port_out_bic(RB[REG_FIRST_PARAM], RB[REG_SECOND_PARAM]);
+    else if(name == "prt_out_bis")
+        port_out_bis(RB[REG_FIRST_PARAM], RB[REG_SECOND_PARAM]);
     else if(name == "spi_init_hw")
         spi_init();
     else if(name == "dma_memset")
@@ -192,37 +186,45 @@ void Syscalls::leds_init()
     platform.leds.init();
 }
 
-void Syscalls::leds_off()
-{
-    platform.leds.off();
-}
-
-void Syscalls::leds_on()
-{
-    platform.leds.on();
-}
-
-void Syscalls::led_on(uint8_t n)
-{
-    emanager.transaction(
-        8,
-        0,
-        platform.leds.current_ua());
-    platform.leds.on(n);
-}
-
-void Syscalls::led_off(uint8_t n)
-{
-    emanager.transaction(
-        8,
-        0,
-        platform.leds.current_ua());
-    platform.leds.off(n);
-}
-
 void Syscalls::port_init()
 {
     platform.port.init();
+}
+
+void Syscalls::port_out_bic(uint8_t port, uint8_t mask)
+{
+    if(port == 5)
+    {
+        // LEDS O~3
+        for(size_t i = 0; i < 4; ++i)
+            if(mask & (1 << i))
+                platform.leds.off(i);
+    }
+    else if(port == 3)
+    {
+        // LEDS 4~7
+        for(size_t i = 4; i < 8; ++i)
+            if(mask & (1 << i))
+                platform.leds.off(i);
+    }
+}
+
+void Syscalls::port_out_bis(uint8_t port, uint8_t mask)
+{
+    if(port == 5)
+    {
+        // LEDS O~3
+        for(size_t i = 0; i < 4; ++i)
+            if(mask & (1 << i))
+                platform.leds.on(i);
+    }
+    else if(port == 3)
+    {
+        // LEDS 4~7
+        for(size_t i = 4; i < 8; ++i)
+            if(mask & (1 << i))
+                platform.leds.on(i);
+    }
 }
 
 void Syscalls::spi_init()

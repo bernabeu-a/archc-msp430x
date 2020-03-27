@@ -564,6 +564,7 @@ void ac_behavior( instruction )
             if(sr.GIE)
             {
                 fire_interrupt(60, false);
+                ac_annul();
                 return;
             }
             break;

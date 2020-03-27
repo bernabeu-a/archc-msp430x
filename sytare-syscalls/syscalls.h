@@ -36,13 +36,11 @@ class Syscalls
     private:
         // Leds
         void leds_init();
-        void leds_off();
-        void leds_on();
-        void led_on(uint8_t n);
-        void led_off(uint8_t n);
 
         // Port
         void port_init();
+        void port_out_bic(uint8_t port, uint8_t mask);
+        void port_out_bis(uint8_t port, uint8_t mask);
 
         // Spi
         void spi_init();
