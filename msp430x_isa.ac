@@ -15,7 +15,7 @@ AC_ISA(msp430x){
     "%op:3 %cond:3 %offset:10";
 
   ac_format Type_PushPopM =
-    "%op:6 %subop:2 %n1:4 %rdst1:4";
+    "%op:6 %subop:1 %word:1 %n1:4 %rdst1:4";
 
   ac_format Type_Extension =
     "%op:5 %payload_h:4 %al:1 %payload_l:6";

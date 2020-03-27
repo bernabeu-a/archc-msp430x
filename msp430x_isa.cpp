@@ -1180,7 +1180,7 @@ void ac_behavior( PUSHPOPM )
     uint16_t n = 1 + n1;
     uint16_t rdst = rdst1;
 
-    if(!(subop & 0x1))
+    if(!word)
         std::cerr << "PUSHPOPM: address mode not supported." << std::endl;
     /*
     std::cout << "PUSHPOP:" << std::endl
@@ -1190,7 +1190,7 @@ void ac_behavior( PUSHPOPM )
 
     */
 
-    if(!(subop & 0x2)) // PUSHM
+    if(!subop) // PUSHM
     {
         //std::cout << " It's a pushm!" << std::endl;
         for(; n--; --rdst)
