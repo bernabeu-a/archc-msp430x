@@ -354,7 +354,7 @@ uint8_t MPU::read_byte(uint32_t address) const
 void MPU::write(uint32_t address, uint16_t word)
 {
     if(address >= text_begin && address < text_end)
-        std::cerr << "Write to .text!" << std::endl;
+        std::cerr << "Write to .text! " << std::hex << address << std::endl;
     
     size_t blockid;
     if(is_in_sram(address, blockid) && segments[blockid])
@@ -365,7 +365,7 @@ void MPU::write(uint32_t address, uint16_t word)
 void MPU::write_byte(uint32_t address, uint8_t byte)
 {
     if(address >= text_begin && address < text_end)
-        std::cerr << "Byte-write to .text!" << std::endl;
+        std::cerr << "Byte-write to .text! " << std::hex << address << std::endl;
     
     size_t blockid;
     if(is_in_sram(address, blockid) && segments[blockid])
