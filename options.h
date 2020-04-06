@@ -11,18 +11,20 @@ struct options_t
     float v_hi_V;
     float v_lo_V;
     float v_thres_V;
+    size_t n_lifecycles;
     bool failed;
     size_t arg_offset;
 
-    void from_voltage(float hi_V, float lo_V, float thres_V, float C_uF)
+    void from_voltage(float hi_V, float lo_V, float thres_V, float C_uF, size_t lifecycles)
     {
         v_hi_V = hi_V;
         v_lo_V = lo_V;
         v_thres_V = thres_V;
         capacitance_nF = C_uF * 1e3;
+        n_lifecycles = lifecycles;
     }
 
-    void from_energy(float e_progress_uJ, float e_chkpt_uJ, float lo_V, float C_uF)
+    void from_energy(float e_progress_uJ, float e_chkpt_uJ, float lo_V, float C_uF, size_t lifecycles)
     {
         float half_cap_uF = C_uF / 2.;
         float e_lo_uJ = half_cap_uF * lo_V * lo_V;
@@ -32,6 +34,7 @@ struct options_t
         v_lo_V = lo_V;
         v_thres_V = sqrt(e_chkpt_uJ / half_cap_uF + lo_V * lo_V);
         capacitance_nF = C_uF * 1e3;
+        n_lifecycles = lifecycles;
     }
 
     void from_default()
@@ -40,6 +43,7 @@ struct options_t
         v_hi_V = 4.;
         v_lo_V = 3.5;
         v_thres_V = 3.6;
+        n_lifecycles = 16;
     }
 
     void recap() const
@@ -49,6 +53,7 @@ struct options_t
                   << "  v_hi    (V) : " << v_hi_V << std::endl
                   << "  v_lo    (V) : " << v_lo_V << std::endl
                   << "  v_thres (V) : " << v_thres_V << std::endl
+                  << "  n_lifecycles: " << std::dec << n_lifecycles << std::endl
                   << std::endl;
     }
 
@@ -87,7 +92,7 @@ struct options_t
             {
                   // (2) ./msp430x.x v hi_V lo_V thres_V C_uF -- kernel
 
-                if(argc < 8 || std::string(argv[6]) != ARG_ARCHC)
+                if(argc < 9 || std::string(argv[7]) != ARG_ARCHC)
                 {
                     usage(argv[0]);
                     failed = true;
@@ -98,8 +103,9 @@ struct options_t
                     float lo_V = str2float(argv[3]);
                     float thres_V = str2float(argv[4]);
                     float C_uF = str2float(argv[5]);
-                    from_voltage(hi_V, lo_V, thres_V, C_uF);
-                    arg_offset = 5;
+                    size_t n_lifecycles = str2uint(argv[6]);
+                    from_voltage(hi_V, lo_V, thres_V, C_uF, n_lifecycles);
+                    arg_offset = 6;
                 }
             }
             else if(command == ARG_ENERGY)
@@ -109,8 +115,9 @@ struct options_t
                 float chkpt_uJ = str2float(argv[3]);
                 float lo_V = str2float(argv[4]);
                 float C_uF = str2float(argv[5]);
-                from_energy(progress_uJ, chkpt_uJ, lo_V, C_uF);
-                arg_offset = 5;
+                size_t n_lifecycles = str2uint(argv[6]);
+                from_energy(progress_uJ, chkpt_uJ, lo_V, C_uF, n_lifecycles);
+                arg_offset = 6;
             }
             else
             {
@@ -126,23 +133,33 @@ struct options_t
     static void usage(const std::string &invocation)
     {
         std::cout << "(1) " << invocation << " -- kernel" << std::endl
-                  << "(2) " << invocation << " v hi_V lo_V thres_V C_uF -- kernel" << std::endl
+                  << "(2) " << invocation << " v hi_V lo_V thres_V C_uF N -- kernel" << std::endl
                   << "      - hi_V   : charge up to voltage (V)" << std::endl
                   << "      - lo_V   : discharge down to voltage (V)" << std::endl
                   << "      - thres_V: low-voltage interrupt voltage (V)" << std::endl
                   << "      - C_uF   : platform capacitance (uF)" << std::endl
+                  << "      - N      : stop simulation after N lifecycles" << std::endl
                   << "      [Constraints] lo_V < thres_V < hi_V" << std::endl
                   << "(3) " << invocation << " e progress_uJ chkpt_uJ lo_V C_uF -- kernel" << std::endl
                   << "      - progress_uJ: available energy before low-voltage interrupt (uJ)" << std::endl
                   << "      - chkpt_uJ   : low-voltage interrupt energy level (uJ)" << std::endl
                   << "      - lo_V       : discharge down to voltage (V)" << std::endl
                   << "      - C_uF       : platform capacitance (uF)" << std::endl
+                  << "      - N          : stop simulation after N lifecycles" << std::endl
                   << std::endl;
     }
 
     static float str2float(const std::string &s)
     {
         float tmp;
+        std::istringstream stream(s);
+        stream >> tmp;
+        return tmp;
+    }
+
+    static size_t str2uint(const std::string &s)
+    {
+        size_t tmp;
         std::istringstream stream(s);
         stream >> tmp;
         return tmp;

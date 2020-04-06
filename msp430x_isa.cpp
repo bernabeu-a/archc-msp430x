@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdlib>
 
 #include  "msp430x_isa.H"
 #include  "msp430x_isa_init.cpp"
@@ -580,6 +581,12 @@ void ac_behavior( instruction )
             RB[REG_PC] = DM.read(0xfffe); // Reset vector
             erase_memory_on_boot(DM);
             ac_pc = RB[REG_PC];
+
+            static size_t total_lifecycles = 0;
+            extern options_t *power_options; // Given by main.cpp
+            if(++total_lifecycles >= power_options->n_lifecycles)
+                std::exit(0);
+
             ac_annul();
             return;
     }
