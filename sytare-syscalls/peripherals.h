@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "../coreutils.h"
+#include "../power_supply.h"
 
 typedef long int energy_t;
 typedef size_t current_t;
@@ -215,8 +216,11 @@ struct platform_t
     Energy energy;
     MPU &mpu;
 
-    platform_t(MPU &mpu):
-        mpu(mpu)
+    const PowerSupply &supply;
+
+    platform_t(MPU &mpu, const PowerSupply &supply):
+        mpu(mpu),
+        supply(supply)
     {
     }
 

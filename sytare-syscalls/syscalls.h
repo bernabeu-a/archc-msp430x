@@ -75,6 +75,9 @@ class Syscalls
             uint16_t dst, uint16_t src, uint16_t len
         );
 
+        // ADC
+        uint16_t adc_measure_vcap();
+
         // Energy
         void energy_init();
         void energy_reduce_consumption();

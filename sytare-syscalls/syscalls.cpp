@@ -48,6 +48,9 @@ static const elf_wl_functions_t whitelist{
     "accelerometer_off",
     "accelerometer_measure",
 
+    // ADC
+    "adc_measure_vcap",
+
     // Energy
     "energy_init",
     "energy_reduce_consumption",
@@ -153,6 +156,8 @@ void Syscalls::run(
         DM.write(ptr + 2, data.y);
         DM.write(ptr + 4, data.z);
     }
+    else if(name == "adc_measure_vcap")
+        RB[REG_RETURN] = adc_measure_vcap();
     else if(name == "energy_init")
         energy_init();
     else if(name == "energy_reduce_consumption")
@@ -392,6 +397,23 @@ void Syscalls::dma_memcpy(
     for(uint16_t i = len; i--;)
         platform.mpu.write_byte(dst++, DM.read_byte(src++));
     emanager.transaction((1 + 2*len) / MCLK_FREQ, 0, 0);
+}
+
+uint16_t Syscalls::adc_measure_vcap()
+{
+    const double VREFM_V = 0.;
+    const double VREFP_V = 2.;
+    const double VMAX_V = 3.67;
+    const double K = VREFP_V / VMAX_V;
+    const size_t ADC_RESOLUTION = 10;
+
+    double vcap_v = platform.supply.voltage();
+    double vin_v = vcap_v * K;
+
+    uint16_t n_adc = ((1 << ADC_RESOLUTION) - 1) * (vin_v - VREFM_V) / (VREFP_V - VREFM_V);
+    std::cout << "ADC(VCAP) = 0x" << std::hex << n_adc << std::endl;
+
+    return n_adc;
 }
 
 void Syscalls::energy_init()

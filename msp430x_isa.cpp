@@ -509,13 +509,13 @@ void ac_behavior( begin )
     extern options_t *power_options; // Given by main.cpp
 
     mpu = new MPU(SRAM_BEGIN, SRAM_END, 16, DM, fire_interrupt, 39);
-    platform = new platform_t(*mpu);
     supply = new PowerSupply(
         power_options->capacitance_nF,
         3.3,
         power_options->v_lo_V,
         power_options->v_hi_V,
         power_options->v_thres_V);
+    platform = new platform_t(*mpu, *supply);
     emanager = new EnergyManager(elogger, *supply, *platform);
     commands = new Commands(*emanager);
     syscalls = new Syscalls(*platform, *emanager);
@@ -531,8 +531,8 @@ void ac_behavior( end )
     delete syscalls;
     delete commands;
     delete emanager;
-    delete supply;
     delete platform;
+    delete supply;
     delete mpu;
 }
 
@@ -548,7 +548,7 @@ void ac_behavior( instruction )
     emanager->log();
 
     //std::cout << std::endl;
-    //std::cout << "pc=" << std::hex << ac_pc << std::endl;
+    std::cout << "pc=" << std::hex << ac_pc << std::endl;
 
     //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
     //std::cout << supply->voltage() << std::endl;

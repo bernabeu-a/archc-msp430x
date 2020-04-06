@@ -30,6 +30,12 @@ bool Commands::run(uint16_t address)
             std::cout << "END(WRAPPER_EXIT)" << std::endl;
             manager.stop_log();
             break;
+        case 4: // ORACLE_SAYS_SUFFICIENT
+            std::cout << "ORACLE_SAYS_SUFFICIENT" << std::endl;
+            break;
+        case 5: // ORACLE_SAYS_INSUFFICIENT
+            std::cout << "ORACLE_SAYS_INSUFFICIENT" << std::endl;
+            break;
 
         default:
             return false;
@@ -40,6 +46,6 @@ bool Commands::run(uint16_t address)
 
 bool Commands::is_command(uint16_t address)
 {
-    return address < 4;
+    return address < 6;
 }
 
