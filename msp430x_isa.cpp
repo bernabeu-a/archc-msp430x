@@ -549,7 +549,7 @@ void ac_behavior( instruction )
     emanager->log();
 
     //std::cout << std::endl;
-    std::cout << "pc=" << std::hex << ac_pc << std::endl;
+    //std::cout << "pc=" << std::hex << ac_pc << std::endl;
 
     //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
     //std::cout << supply->voltage() << std::endl;
@@ -1189,8 +1189,6 @@ void ac_behavior( PUSHPOPM )
     uint16_t n = 1 + n1;
     uint16_t rdst = rdst1;
 
-    if(!word)
-        std::cerr << "PUSHPOPM: address mode not supported." << std::endl;
     /*
     std::cout << "PUSHPOP:" << std::endl
               << " n=" << std::dec << n << std::endl
@@ -1201,22 +1199,45 @@ void ac_behavior( PUSHPOPM )
 
     if(!subop) // PUSHM
     {
-        //std::cout << " It's a pushm!" << std::endl;
-        for(; n--; --rdst)
+        if(word) // PUSHM
         {
-            //std::cout << "  r" << std::dec << rdst << std::endl;
-            RB[REG_SP] -= 2;
-            mpu->write(RB[REG_SP], RB[rdst]);
+            for(; n--; --rdst)
+            {
+                RB[REG_SP] -= 2;
+                mpu->write(RB[REG_SP], RB[rdst]);
+            }
+        }
+        else // PUSHM.A
+        {
+            std::cerr << "Warning: PUSHM.A: bits 16-19 set to 0" << std::endl;
+            for(; n--; --rdst)
+            {
+                RB[REG_SP] -= 2;
+                mpu->write(RB[REG_SP], 0); // Bits 16-19 set to 0
+                RB[REG_SP] -= 2;
+                mpu->write(RB[REG_SP], RB[rdst]);
+            }
+
         }
     }
     else // POPM
     {
-        //std::cout << " It's a popm!" << std::endl;
-        for(; n--; ++rdst)
+        if(word) // POPM
         {
-            //std::cout << "  r" << std::dec << rdst << std::endl;
-            RB[rdst] = mpu->read(RB[REG_SP]);
-            RB[REG_SP] += 2;
+            for(; n--; ++rdst)
+            {
+                RB[rdst] = mpu->read(RB[REG_SP]);
+                RB[REG_SP] += 2;
+            }
+        }
+        else // POPM.A
+        {
+            std::cerr << "Warning: POPM.A: bits 16-19 set to 0" << std::endl;
+            for(; n--; ++rdst)
+            {
+                RB[rdst] = mpu->read(RB[REG_SP]);
+                RB[REG_SP] += 4; // Bits 16-19 ignored / set to 0
+            }
         }
     }
     ac_pc = RB[REG_PC];
@@ -1226,7 +1247,9 @@ void ac_behavior( PUSHPOPM )
               << std::endl;
     */
 
-    emanager->add_cycles(ESTIMATE_PIPELINE(3 + n1), 0);
+    // PUSHM, POPM -> 2+n
+    // PUSHM.A, POPM.A -> 2+2n
+    emanager->add_cycles(ESTIMATE_PIPELINE(2 + (word ? n : 2*n)), 0);
 }
 
 //!Instruction EXT behavior method.
