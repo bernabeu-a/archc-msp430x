@@ -1,12 +1,18 @@
 #include <iostream>
 
 #include "syscalls.h"
+#include "../options.h"
 
 #define REG_FIRST_PARAM  12
 #define REG_SECOND_PARAM 13
 #define REG_THIRD_PARAM  14
 #define REG_FOURTH_PARAM 15
 #define REG_RETURN       12
+
+namespace msp430x_parms
+{
+    extern options_t *power_options; // Given by main.cpp
+}
 
 const float MCLK_FREQ = 24; // MHz
 
@@ -428,12 +434,16 @@ void Syscalls::energy_reduce_consumption()
 void Syscalls::energy_start_measurements()
 {
     platform.energy.start();
-    emanager.start_log();
+
+    if(!msp430x_parms::power_options->profiling)
+        emanager.start_log();
 }
 
 void Syscalls::energy_stop_measurements()
 {
-    emanager.stop_log();
+    if(!msp430x_parms::power_options->profiling)
+        emanager.stop_log();
+
     platform.energy.stop();
 }
 

@@ -523,7 +523,7 @@ void ac_behavior( begin )
     syscalls->print();
     erase_memory_on_boot(DM);
     
-    supply->set_infinite_energy(false);
+    supply->set_infinite_energy(power_options->profiling);
 }
 
 //!Behavior executed after simulation ends.
@@ -540,6 +540,8 @@ void ac_behavior( end )
 //!Generic instruction behavior method.
 void ac_behavior( instruction )
 {
+    extern options_t *power_options; // Given by main.cpp
+
     delete context;
     context = new arch_context_t(DM, RB, ac_pc, std::bind(&msp430x_isa::ac_annul, this));
     context->pc = ac_pc;
@@ -547,6 +549,12 @@ void ac_behavior( instruction )
     extension.tick();
 
     emanager->log();
+
+    if(power_options->profiling && ac_pc == power_options->profile_to)
+    {
+        emanager->stop_log();
+        std::exit(0);
+    }
 
     //std::cout << std::endl;
     //std::cout << "pc=" << std::hex << ac_pc << std::endl;
@@ -583,7 +591,6 @@ void ac_behavior( instruction )
             ac_pc = RB[REG_PC];
 
             static size_t total_lifecycles = 0;
-            extern options_t *power_options; // Given by main.cpp
             if(++total_lifecycles >= power_options->n_lifecycles)
                 std::exit(0);
 
@@ -1030,7 +1037,16 @@ void ac_behavior( CALL )
     {
         RB[REG_SP] -= 2;
         DM.write(RB[REG_SP], RB[REG_PC]);
-        RB[REG_PC] = address;
+
+        extern options_t *power_options; // Given by main.cpp
+        // Regular case: jump to the requested address
+        if(!power_options->profiling || address != power_options->profile_main)
+            RB[REG_PC] = address;
+        else // In profiler mode: if jumping to main, jump to profile_from instead
+        {
+            RB[REG_PC] = power_options->profile_from;
+            emanager->start_log();
+        }
     }
 
     ac_pc = RB[REG_PC];

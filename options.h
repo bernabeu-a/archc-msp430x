@@ -5,6 +5,8 @@
 #include <sstream>
 #include <cmath>
 
+#include "utils/elfreader.h"
+
 struct options_t
 {
     float capacitance_nF;
@@ -12,6 +14,11 @@ struct options_t
     float v_lo_V;
     float v_thres_V;
     size_t n_lifecycles;
+    uint16_t profile_from;
+    uint16_t profile_to;
+    uint16_t profile_main;
+    bool profiling;
+
     bool failed;
     size_t arg_offset;
 
@@ -22,6 +29,7 @@ struct options_t
         v_thres_V = thres_V;
         capacitance_nF = C_uF * 1e3;
         n_lifecycles = lifecycles;
+        profiling = false;
     }
 
     void from_energy(float e_progress_uJ, float e_chkpt_uJ, float lo_V, float C_uF, size_t lifecycles)
@@ -35,6 +43,15 @@ struct options_t
         v_thres_V = sqrt(e_chkpt_uJ / half_cap_uF + lo_V * lo_V);
         capacitance_nF = C_uF * 1e3;
         n_lifecycles = lifecycles;
+        profiling = false;
+    }
+    
+    void from_profiler(uint16_t _from, uint16_t _to, uint16_t _main)
+    {
+        profile_from = _from;
+        profile_to = _to;
+        profile_main = _main;
+        profiling = true;
     }
 
     void from_default()
@@ -44,17 +61,28 @@ struct options_t
         v_lo_V = 3.5;
         v_thres_V = 3.6;
         n_lifecycles = 16;
+        profiling = false;
     }
 
     void recap() const
     {
-        std::cout << "# Options" << std::endl
-                  << "  cap     (uF): " << (capacitance_nF * 1e-3) << std::endl
-                  << "  v_hi    (V) : " << v_hi_V << std::endl
-                  << "  v_lo    (V) : " << v_lo_V << std::endl
-                  << "  v_thres (V) : " << v_thres_V << std::endl
-                  << "  n_lifecycles: " << std::dec << n_lifecycles << std::endl
-                  << std::endl;
+        std::cout << "# Options" << std::endl;
+        if(!profiling)
+        {
+            std::cout << "  cap     (uF): " << (capacitance_nF * 1e-3) << std::endl
+                      << "  v_hi    (V) : " << v_hi_V << std::endl
+                      << "  v_lo    (V) : " << v_lo_V << std::endl
+                      << "  v_thres (V) : " << v_thres_V << std::endl
+                      << "  n_lifecycles: " << std::dec << n_lifecycles << std::endl
+                      << std::endl;
+        }
+        else
+        {
+            std::cout << "  profiling" << std::endl
+                      << "  from: " << std::hex << profile_from << std::endl
+                      << "  to  : " << profile_to << std::endl
+                      << std::endl;
+        }
     }
 
     options_t(int argc, char **argv)
@@ -71,6 +99,7 @@ struct options_t
             const std::string ARG_ARCHC("--");
             const std::string ARG_ENERGY("e");
             const std::string ARG_VOLTAGE("v");
+            const std::string ARG_PROFILER("p");
 
             std::string command(argv[1]);
             if(command == ARG_ARCHC)
@@ -119,6 +148,17 @@ struct options_t
                 from_energy(progress_uJ, chkpt_uJ, lo_V, C_uF, n_lifecycles);
                 arg_offset = 6;
             }
+            else if(command == ARG_PROFILER)
+            {
+                // (4) ./msp430x.x p address_start address_end -- kernel
+                float address_start = str2hex_uint(argv[2]);
+                float address_end = str2hex_uint(argv[3]);
+                elf_functions_t functions = read_functions_from_elf(argv[5], {"main"});
+                const auto &it = functions.begin();
+                from_profiler(address_start, address_end, it->first);
+
+                arg_offset = 3;
+            }
             else
             {
                 usage(argv[0]);
@@ -146,6 +186,9 @@ struct options_t
                   << "      - lo_V       : discharge down to voltage (V)" << std::endl
                   << "      - C_uF       : platform capacitance (uF)" << std::endl
                   << "      - N          : stop simulation after N lifecycles" << std::endl
+                  << "(4) " << invocation << " p address_start address_end -- kernel" << std::endl
+                  << "      - address_start: boot at this address (hex) instead of the main, after the kernel bootloader" << std::endl
+                  << "      - address_end  : stop profiling at this address (hex)" << std::endl
                   << std::endl;
     }
 
@@ -162,6 +205,14 @@ struct options_t
         size_t tmp;
         std::istringstream stream(s);
         stream >> tmp;
+        return tmp;
+    }
+
+    static size_t str2hex_uint(const std::string &s)
+    {
+        size_t tmp;
+        std::istringstream stream(s);
+        stream >> std::hex >> tmp;
         return tmp;
     }
 };
