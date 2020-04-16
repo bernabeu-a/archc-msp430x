@@ -5,6 +5,7 @@
 
 #include "../coreutils.h"
 #include "../power_supply.h"
+#include "../utils/strutils.h"
 
 typedef long int energy_t;
 typedef size_t current_t;

@@ -6,6 +6,7 @@
 #include <cmath>
 
 #include "utils/elfreader.h"
+#include "utils/strutils.h"
 
 struct options_t
 {
@@ -194,30 +195,6 @@ struct options_t
                   << "      - address_end  : stop profiling at this address (hex)" << std::endl
                   << "      - command      : string command to setup the initial conditions (e.g., \"spi=init;cc2500=idle;@0x100b=42;r12=10\")" << std::endl
                   << std::endl;
-    }
-
-    static float str2float(const std::string &s)
-    {
-        float tmp;
-        std::istringstream stream(s);
-        stream >> tmp;
-        return tmp;
-    }
-
-    static size_t str2uint(const std::string &s)
-    {
-        size_t tmp;
-        std::istringstream stream(s);
-        stream >> tmp;
-        return tmp;
-    }
-
-    static size_t str2hex_uint(const std::string &s)
-    {
-        size_t tmp;
-        std::istringstream stream(s);
-        stream >> std::hex >> tmp;
-        return tmp;
     }
 };
 

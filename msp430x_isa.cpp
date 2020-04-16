@@ -504,6 +504,82 @@ static void erase_memory_on_boot(ac_memory &DM)
         DM.write_byte(i, periph_canary);
 }
 
+static void apply_command(
+    platform_t &platform,
+    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
+    const std::string &command)
+{
+    const std::string BAD_STATE("Bad profiler state: ");
+    std::vector<std::string> instructions = str_split(command, ';');
+    for(const std::string &instruction : instructions)
+    {
+        std::vector<std::string> fields = str_split(instruction, '=');
+        if(fields.size() != 2)
+        {
+            std::cerr << "Bad profiler command: " << instruction << std::endl;
+            continue;
+        }
+
+        if(fields[0] == "port")
+        {
+            if(fields[1] == "init")
+                platform.port.init();
+            else
+                std::cerr << BAD_STATE << "port/" << fields[1] << std::endl;
+        }
+        else if(fields[0] == "temperature")
+        {
+            if(fields[1] == "init")
+                platform.temperature.init();
+            else
+                std::cerr << BAD_STATE << "temperature/" << fields[1] << std::endl;
+        }
+        else if(fields[0] == "accelerometer")
+        {
+            if(fields[1] == "on")
+            {
+                platform.accelerometer.init();
+                platform.accelerometer.on();
+            }
+            else
+                std::cerr << BAD_STATE << "accelerometer/" << fields[1] << std::endl;
+        }
+        else if(fields[0] == "spi")
+        {
+            if(fields[1] == "init")
+                platform.spi.init();
+            else
+                std::cerr << BAD_STATE << "spi/" << fields[1] << std::endl;
+        }
+        else if(fields[0] == "cc2500")
+        {
+            if(fields[1] == "idle")
+            {
+                platform.cc2500.init();
+                platform.cc2500.idle();
+            }
+            else
+                std::cerr << BAD_STATE << "cc2500/" << fields[1] << std::endl;
+        }
+        else if(fields[0][0] == 'r')
+        {
+            size_t reg = str2uint(fields[0].substr(1));
+            if(reg >= 16)
+            {
+                std::cerr << BAD_STATE << "r" << std::dec << reg << " does not exist!" << std::endl;
+                continue;
+            }
+
+            size_t value = str2uint(fields[1]);
+            RB[reg] = value;
+        }
+        else if(fields[0][0] == '@')
+        {
+            std::cerr << "Profiler: initial memory state not yet supported" << std::endl;
+        }
+    }
+}
+
 //!Behavior executed before simulation begins.
 void ac_behavior( begin )
 {
@@ -524,6 +600,9 @@ void ac_behavior( begin )
     erase_memory_on_boot(DM);
     
     supply->set_infinite_energy(power_options->profiling);
+
+    if(power_options->profiling)
+        apply_command(*platform, RB, power_options->profile_command);
 }
 
 //!Behavior executed after simulation ends.
