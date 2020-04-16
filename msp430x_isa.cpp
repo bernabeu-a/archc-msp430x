@@ -600,9 +600,6 @@ void ac_behavior( begin )
     erase_memory_on_boot(DM);
     
     supply->set_infinite_energy(power_options->profiling);
-
-    if(power_options->profiling)
-        apply_command(*platform, RB, power_options->profile_command);
 }
 
 //!Behavior executed after simulation ends.
@@ -1123,6 +1120,9 @@ void ac_behavior( CALL )
             RB[REG_PC] = address;
         else // In profiler mode: if jumping to main, jump to profile_from instead
         {
+            // First, populate registers, memory and peripheral states with the snapshot passed as a command
+            apply_command(*platform, RB, power_options->profile_command);
+
             RB[REG_PC] = power_options->profile_from;
             emanager->start_log();
         }
