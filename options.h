@@ -17,6 +17,7 @@ struct options_t
     uint16_t profile_from;
     uint16_t profile_to;
     uint16_t profile_main;
+    std::string profile_command;
     bool profiling;
 
     bool failed;
@@ -79,8 +80,9 @@ struct options_t
         else
         {
             std::cout << "  profiling" << std::endl
-                      << "  from: " << std::hex << profile_from << std::endl
-                      << "  to  : " << profile_to << std::endl
+                      << "  from   : " << std::hex << profile_from << std::endl
+                      << "  to     : " << profile_to << std::endl
+                      << "  command: " << profile_command << std::endl
                       << std::endl;
         }
     }
@@ -150,14 +152,15 @@ struct options_t
             }
             else if(command == ARG_PROFILER)
             {
-                // (4) ./msp430x.x p address_start address_end -- kernel
+                // (4) ./msp430x.x p address_start address_end command -- kernel
                 float address_start = str2hex_uint(argv[2]);
                 float address_end = str2hex_uint(argv[3]);
-                elf_functions_t functions = read_functions_from_elf(argv[5], {"main"});
+                profile_command = std::string(argv[4]);
+                elf_functions_t functions = read_functions_from_elf(argv[6], {"main"});
                 const auto &it = functions.begin();
                 from_profiler(address_start, address_end, it->first);
 
-                arg_offset = 3;
+                arg_offset = 4;
             }
             else
             {
@@ -186,9 +189,10 @@ struct options_t
                   << "      - lo_V       : discharge down to voltage (V)" << std::endl
                   << "      - C_uF       : platform capacitance (uF)" << std::endl
                   << "      - N          : stop simulation after N lifecycles" << std::endl
-                  << "(4) " << invocation << " p address_start address_end -- kernel" << std::endl
+                  << "(4) " << invocation << " p address_start address_end command -- kernel" << std::endl
                   << "      - address_start: boot at this address (hex) instead of the main, after the kernel bootloader" << std::endl
                   << "      - address_end  : stop profiling at this address (hex)" << std::endl
+                  << "      - command      : string command to setup the initial conditions (e.g., \"spi=init;cc2500=idle;@0x100b=42;r12=10\")" << std::endl
                   << std::endl;
     }
 
