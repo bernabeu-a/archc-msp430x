@@ -1,6 +1,12 @@
 #include <iostream>
 
 #include "commands.h"
+#include "options.h"
+
+namespace msp430x_parms
+{
+    extern options_t *power_options; // Given by main.cpp
+}
 
 Commands::Commands(EnergyManager &manager):
     manager(manager)
@@ -16,19 +22,23 @@ bool Commands::run(uint16_t address)
     {
         case 0: // WRAPPER_ENTRY_BEGIN
             std::cout << "BEGIN(WRAPPER_ENTRY)" << std::endl;
-            manager.start_log();
+            if(!msp430x_parms::power_options->profiling)
+                manager.start_log();
             break;
         case 1: // WRAPPER_ENTRY_END
             std::cout << "END(WRAPPER_ENTRY)" << std::endl;
-            manager.stop_log();
+            if(!msp430x_parms::power_options->profiling)
+                manager.stop_log();
             break;
         case 2: // WRAPPER_EXIT_BEGIN
             std::cout << "BEGIN(WRAPPER_EXIT)" << std::endl;
-            manager.start_log();
+            if(!msp430x_parms::power_options->profiling)
+                manager.start_log();
             break;
         case 3: // WRAPPER_EXIT_END
             std::cout << "END(WRAPPER_EXIT)" << std::endl;
-            manager.stop_log();
+            if(!msp430x_parms::power_options->profiling)
+                manager.stop_log();
             break;
         case 4: // ORACLE_SAYS_SUFFICIENT
             std::cout << "ORACLE_SAYS_SUFFICIENT" << std::endl;

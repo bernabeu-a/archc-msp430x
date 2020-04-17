@@ -27,6 +27,8 @@ class EnergyManager
         EnergyLogger &logger;
         PowerSupply &supply;
         const platform_t &platform;
+
+        double tmp_energy_nj;
 };
 
 #endif
