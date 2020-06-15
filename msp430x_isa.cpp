@@ -634,12 +634,13 @@ void ac_behavior( instruction )
 
     if(elogger.is_logging())
     {
-        std::cout << std::endl;
-        std::cout << "pc=" << std::hex << ac_pc << std::endl;
+        //std::cout << std::endl;
+        //std::cout << "pc=" << std::hex << ac_pc << std::endl;
 
         //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
         //std::cout << supply->voltage() << std::endl;
     }
+    //elogger.print();
     
     switch(supply->get_state())
     {
@@ -1343,6 +1344,7 @@ void ac_behavior( PUSHPOPM )
 
     // PUSHM, POPM -> 2+n
     // PUSHM.A, POPM.A -> 2+2n
+    n = 1 + n1; // Quickfix: reset value
     emanager->add_cycles(ESTIMATE_PIPELINE(2 + (word ? n : 2*n)), 0);
 }
 

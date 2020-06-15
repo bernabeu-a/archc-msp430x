@@ -43,6 +43,12 @@ void EnergyLogger::log(size_t cycles, current_t current_ua, bool first)
     former_current_point.current_ua = current_ua;
 }
 
+void EnergyLogger::print() const
+{
+    std::cout << "EnergyLogger: " << std::dec << former_current_point.cycles
+              << ", " << former_current_point.current_ua << std::endl;
+}
+
 bool EnergyLogger::is_logging() const
 {
     return enabled;
