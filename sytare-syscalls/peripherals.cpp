@@ -318,7 +318,6 @@ void Energy::stop()
 MPU::MPU(
     uint32_t address_begin,
     uint32_t address_end,
-    size_t segment_count,
     ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword> &DM,
     interrupt_handler_t interrupt_handler,
     size_t interrupt_id):
@@ -326,8 +325,6 @@ MPU::MPU(
     DM(DM),
     address_begin(address_begin),
     address_end(address_end),
-    block_size((address_end-address_begin) / segment_count),
-    segments(segment_count, false), // Every segment is unlocked by default
     interrupt_handler(interrupt_handler),
     interrupt_id(interrupt_id)
 {
@@ -357,7 +354,7 @@ void MPU::write(uint32_t address, uint16_t word)
         std::cerr << "Write to .text! " << std::hex << address << std::endl;
     
     size_t blockid;
-    if(is_in_sram(address, blockid) && segments[blockid])
+    if(initialized && is_in_sram(address, blockid) && segments[blockid])
         fault(address);
     DM.write(address, word);
 }
@@ -368,13 +365,26 @@ void MPU::write_byte(uint32_t address, uint8_t byte)
         std::cerr << "Byte-write to .text! " << std::hex << address << std::endl;
     
     size_t blockid;
-    if(is_in_sram(address, blockid) && segments[blockid])
+    if(initialized && is_in_sram(address, blockid) && segments[blockid])
         fault(address);
     DM.write_byte(address, byte);
 }
 
+void MPU::init(size_t nregions)
+{
+    Peripheral::init();
+    block_size = (address_end-address_begin) / nregions;
+    segments.resize(nregions, false); // Every segment is unlocked by default
+}
+
 void MPU::block(size_t blockid)
 {
+    if(!initialized)
+    {
+        std::cerr << "Oops MPU::block not initialized yet" << std::endl;
+        return;
+    }
+
     if(blockid < segments.size())
         segments[blockid] = true;
     else
@@ -384,6 +394,12 @@ void MPU::block(size_t blockid)
 
 void MPU::unblock(size_t blockid)
 {
+    if(!initialized)
+    {
+        std::cerr << "Oops MPU::unblock not initialized yet" << std::endl;
+        return;
+    }
+
     if(blockid < segments.size())
         segments[blockid] = false;
     else

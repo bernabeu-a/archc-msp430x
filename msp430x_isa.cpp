@@ -17,8 +17,8 @@
 #define REG_CG1 REG_SR
 #define REG_CG2 3
 
-const uint16_t SRAM_BEGIN  = 0x1c00;
-const uint16_t SRAM_END    = 0x2000;
+const uint16_t SRAM_BEGIN  = 0x1000;
+const uint16_t SRAM_END    = 0x6000;
 
 const uint16_t PERIPH_BEGIN = 0x0000;
 const uint16_t PERIPH_END   = 0x1000;
@@ -211,12 +211,12 @@ static unsigned int negative8(uint8_t x)
 
 static unsigned int carry16(uint32_t x)
 {
-    return x & (1 << 16);
+    return x > 0xffff;
 }
 
 static unsigned int carry8(uint32_t x)
 {
-    return x & (1 << 8);
+    return x > 0xff;
 }
 
 static unsigned int overflow16(uint16_t op1, uint16_t op2, uint16_t result)
@@ -585,7 +585,7 @@ void ac_behavior( begin )
 {
     extern options_t *power_options; // Given by main.cpp
 
-    mpu = new MPU(SRAM_BEGIN, SRAM_END, 16, DM, fire_interrupt, 39);
+    mpu = new MPU(SRAM_BEGIN, SRAM_END, DM, fire_interrupt, 39);
     supply = new PowerSupply(
         power_options->capacitance_nF,
         3.3,
@@ -632,11 +632,14 @@ void ac_behavior( instruction )
         std::exit(0);
     }
 
-    //std::cout << std::endl;
-    //std::cout << "pc=" << std::hex << ac_pc << std::endl;
+    if(elogger.is_logging())
+    {
+        std::cout << std::endl;
+        std::cout << "pc=" << std::hex << ac_pc << std::endl;
 
-    //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
-    //std::cout << supply->voltage() << std::endl;
+        //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
+        //std::cout << supply->voltage() << std::endl;
+    }
     
     switch(supply->get_state())
     {
@@ -657,7 +660,8 @@ void ac_behavior( instruction )
 
         default: // OFF
             supply->refill();
-            emanager->stop_log();
+            if(elogger.is_logging())
+                emanager->stop_log();
 
             std::cout << "REBOOT" << std::endl;
 
@@ -871,21 +875,16 @@ void ac_behavior( CMP )
     sr_flags_t sr(RB);
 
     sr.set_C(operand_dst >= operand_src);
+    sr.set_N(operand_src > operand_dst);
 
-    operand_src = ~operand_src+1;
+    operand_src = (~operand_src) + 1;
     operand_dst += operand_src;
 
     sr.set_Z(operand_dst == 0);
     if(bw)
-    {
-        sr.set_N(negative8(operand_dst));
         sr.set_V(overflow8(operand_src, operand_tmp, operand_dst));
-    }
     else
-    {
-        sr.set_N(negative16(operand_dst));
         sr.set_V(overflow16(operand_src, operand_tmp, operand_dst));
-    }
 
     // Do not change the value
     doubleop_dest(mpu, RB, operand_tmp, ad, bw, rdst);

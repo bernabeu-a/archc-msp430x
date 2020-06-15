@@ -16,6 +16,8 @@ class EnergyLogger
 
         void log(size_t cycles, current_t current_ua);
 
+        bool is_logging() const;
+
     private:
         void log(size_t cycles, current_t current_ua, bool first);
 

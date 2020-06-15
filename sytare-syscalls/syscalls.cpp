@@ -64,6 +64,7 @@ static const elf_wl_functions_t whitelist{
     "energy_stop_measurements",
 
     // MPU
+    "mpu_hw_init",
     "mpu_hw_block",
     "mpu_hw_unblock",
 
@@ -172,6 +173,11 @@ void Syscalls::run(
         energy_start_measurements();
     else if(name == "energy_stop_measurements")
         energy_stop_measurements();
+    else if(name == "mpu_hw_init")
+    {
+        uint16_t nregions = RB[REG_FIRST_PARAM];
+        mpu_init(nregions);
+    }
     else if(name == "mpu_hw_block")
     {
         uint16_t blockid = RB[REG_FIRST_PARAM];
@@ -380,10 +386,10 @@ void Syscalls::dma_memset(
     uint16_t dst, uint8_t val, uint16_t len
 )
 {
+    std::cout << std::hex << "memset( " << dst << ", " << val << ", " << len << ")" << std::endl;
+
     if(!len)
         return;
-
-    std::cout << std::hex << "memset( " << dst << ", " << val << ", " << len << ")" << std::endl;
 
     for(uint16_t i = len; i--;)
         platform.mpu.write_byte(dst++, val);
@@ -395,10 +401,10 @@ void Syscalls::dma_memcpy(
     uint16_t dst, uint16_t src, uint16_t len
 )
 {
+    std::cout << std::hex << "memcpy( " << dst << ", " << src << ", " << len << ")" << std::endl;
+
     if(!len)
         return;
-
-    std::cout << std::hex << "memcpy( " << dst << ", " << src << ", " << len << ")" << std::endl;
 
     for(uint16_t i = len; i--;)
         platform.mpu.write_byte(dst++, DM.read_byte(src++));
@@ -445,6 +451,12 @@ void Syscalls::energy_stop_measurements()
         emanager.stop_log();
 
     platform.energy.stop();
+}
+
+void Syscalls::mpu_init(uint16_t nregions)
+{
+    std::cout << "MPU_INIT(" << std::dec << nregions << ")" << std::endl;
+    platform.mpu.init(nregions);
 }
 
 void Syscalls::mpu_block(uint16_t blockid)

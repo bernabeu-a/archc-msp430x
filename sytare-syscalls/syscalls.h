@@ -85,6 +85,7 @@ class Syscalls
         void energy_stop_measurements();
 
         // MPU
+        void mpu_init(uint16_t nregions);
         void mpu_block(uint16_t blockid);
         void mpu_unblock(uint16_t blockid);
 
