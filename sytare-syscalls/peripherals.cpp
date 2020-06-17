@@ -316,15 +316,10 @@ void Energy::stop()
 }
 
 MPU::MPU(
-    uint32_t address_begin,
-    uint32_t address_end,
     ac_memport<msp430x_parms::ac_word, msp430x_parms::ac_Hword> &DM,
     interrupt_handler_t interrupt_handler,
     size_t interrupt_id):
-
     DM(DM),
-    address_begin(address_begin),
-    address_end(address_end),
     interrupt_handler(interrupt_handler),
     interrupt_id(interrupt_id)
 {
@@ -370,9 +365,11 @@ void MPU::write_byte(uint32_t address, uint8_t byte)
     DM.write_byte(address, byte);
 }
 
-void MPU::init(size_t nregions)
+void MPU::init(size_t address_b, size_t address_e, size_t nregions)
 {
     Peripheral::init();
+    address_begin = address_b;
+    address_end = address_e;
     block_size = (address_end-address_begin) / nregions;
     segments.resize(nregions, false); // Every segment is unlocked by default
 }

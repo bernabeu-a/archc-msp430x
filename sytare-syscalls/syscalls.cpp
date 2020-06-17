@@ -68,7 +68,10 @@ static const elf_wl_functions_t whitelist{
     "mpu_hw_block",
     "mpu_hw_unblock",
 
-    "syt_shutdown_platform"
+    "syt_shutdown_platform",
+
+    // Sim
+    "sim_beacon"
 };
 
 Syscalls::Syscalls(platform_t &platform, EnergyManager &emanager):
@@ -175,8 +178,10 @@ void Syscalls::run(
         energy_stop_measurements();
     else if(name == "mpu_hw_init")
     {
-        uint16_t nregions = RB[REG_FIRST_PARAM];
-        mpu_init(nregions);
+        uint16_t address_start = RB[REG_FIRST_PARAM];
+        uint16_t address_stop  = RB[REG_SECOND_PARAM];
+        uint16_t nregions      = RB[REG_THIRD_PARAM];
+        mpu_init(address_start, address_stop, nregions);
     }
     else if(name == "mpu_hw_block")
     {
@@ -191,6 +196,11 @@ void Syscalls::run(
     else if(name == "syt_shutdown_platform")
     {
         emanager.force_reboot();
+    }
+    else if(name == "sim_beacon")
+    {
+        uint16_t beacon = RB[REG_FIRST_PARAM];
+        std::cout << "BEACON " << std::dec << beacon << std::endl;
     }
     else
     {
@@ -453,10 +463,10 @@ void Syscalls::energy_stop_measurements()
     platform.energy.stop();
 }
 
-void Syscalls::mpu_init(uint16_t nregions)
+void Syscalls::mpu_init(uint16_t address_start, uint16_t address_stop, uint16_t nregions)
 {
-    std::cout << "MPU_INIT(" << std::dec << nregions << ")" << std::endl;
-    platform.mpu.init(nregions);
+    std::cout << "MPU_INIT(" << std::hex << address_start << ", " << address_stop << ", " << std::dec << nregions << ")" << std::endl;
+    platform.mpu.init(address_start, address_stop, nregions);
 }
 
 void Syscalls::mpu_block(uint16_t blockid)

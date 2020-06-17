@@ -585,7 +585,7 @@ void ac_behavior( begin )
 {
     extern options_t *power_options; // Given by main.cpp
 
-    mpu = new MPU(SRAM_BEGIN, SRAM_END, DM, fire_interrupt, 39);
+    mpu = new MPU(DM, fire_interrupt, 39);
     supply = new PowerSupply(
         power_options->capacitance_nF,
         3.3,
