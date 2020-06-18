@@ -258,9 +258,7 @@ static uint16_t doubleop_source(
             break;
 
         case AM_INDEXED:
-            if(rsrc == REG_CG1)
-                operand = 0x0;
-            else if(rsrc == REG_CG2)
+            if(rsrc == REG_CG2)
                 operand = 0x1;
             else
             {
@@ -277,10 +275,10 @@ static uint16_t doubleop_source(
             break;
 
         case AM_INDIRECT_REG:
-            if(rsrc == REG_CG1)
-                operand = 0x4;
-            else if(rsrc == REG_CG2)
+            if(rsrc == REG_CG2)
                 operand = 0x2;
+            else if(rsrc == REG_CG1)
+                operand = 0x4;
             else
             {
                 if(bw)
@@ -291,10 +289,10 @@ static uint16_t doubleop_source(
             break;
 
         case AM_INDIRECT_INCR:
-            if(rsrc == REG_CG1)
-                operand = 0x8;
-            else if(rsrc == REG_CG2)
+            if(rsrc == REG_CG2)
                 operand = 0xffff;
+            else if(rsrc == REG_CG1)
+                operand = 0x8;
             else
             {
                 operand = mpu->read(RB[rsrc]);
@@ -634,10 +632,10 @@ void ac_behavior( instruction )
         std::exit(0);
     }
 
-    //if(elogger.is_logging())
+    if(elogger.is_logging())
     {
-        std::cout << std::endl;
-        std::cout << "pc=" << std::hex << ac_pc << std::endl;
+        //std::cout << std::endl;
+        //std::cout << "pc=" << std::hex << ac_pc << std::endl;
 
         //std::cout << "sp=" << std::hex << RB[REG_SP] << std::endl;
         //std::cout << supply->voltage() << std::endl;
