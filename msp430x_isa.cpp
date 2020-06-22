@@ -145,32 +145,39 @@ enum extension_state_e
     EXT_ERROR
 };
 
+struct repeat_t
+{
+    uint16_t zc, count;
+};
+
 struct extension_t
 {
     uint16_t payload_h, payload_l, al;
     extension_state_e state;
+
+    repeat_t repeat;
 
     extension_t():
         state(EXT_NONE)
     {
     }
 
-    void tick()
+    void make_repeat(ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB)
     {
-        if(state == EXT_RDY)
-            state = EXT_RUN;
-        else if(state == EXT_RUN)
+        repeat.zc = (payload_h >> 1) & 1;
+
+        if(payload_h & 1) // #
         {
-            state = EXT_ERROR;
-            std::cerr << "Extension state error (Oops)" << std::endl;
+            uint16_t rn = payload_l & 0xf;
+            repeat.count = (RB[rn] & 0xf);
         }
+        else
+            repeat.count = (payload_l & 0xf);
+        state = EXT_RUN;
+        std::cout << "Repeat " << std::dec << (repeat.count+1) << " times" << std::endl;
     }
 };
 
-struct extension_repeat_t
-{
-    uint16_t zc, al, count;
-};
 
 enum addressing_mode_e
 {
@@ -423,51 +430,6 @@ static size_t format2_0_cycles(uint8_t as)
     return 3;
 }
 
-static void extension_to_repeat(
-    const extension_t &extension,
-    ac_regbank<16, msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
-    uint16_t &zc,
-    uint16_t &al,
-    uint16_t &count)
-{
-    zc = (extension.payload_h >> 1) & 1;
-    al = extension.al;
-
-    if(extension.payload_h & 1) // #
-    {
-        uint16_t rn = extension.payload_l & 0xf;
-        count = 1 + (RB[rn] & 0xf);
-    }
-    else
-        count = 1 + (extension.payload_l & 0xf);
-}
-
-static void extension_repeat(
-    const extension_t &extension,
-    extension_repeat_t &repeat,ac_regbank<16,
-    msp430x_parms::ac_word, msp430x_parms::ac_Dword>& RB,
-    uint8_t as,
-    uint8_t ad,
-    const std::string &instruction_name)
-{
-    repeat.zc = 0;
-    repeat.al = 1;
-    repeat.count = 1;
-
-    if(extension.state == EXT_RUN)
-    {
-        //std::cout << "Extended " << instruction_name << std::endl;
-
-        if(as == 0 && ad == 0)
-        {
-            extension_to_repeat(extension, RB, repeat.zc, repeat.al, repeat.count);
-            //std::cout << " " << std::dec << repeat.count << " t imes" << std::endl;
-        }
-        else
-            std::cerr << "Oops, extension not supported yet." << std::endl;
-    }
-}
-
 // replay == true iff mpu
 // replay == false otherwise
 static void fire_interrupt(size_t source_id, bool replay)
@@ -622,8 +584,6 @@ void ac_behavior( instruction )
     context = new arch_context_t(DM, RB, ac_pc, std::bind(&msp430x_isa::ac_annul, this));
     context->pc = ac_pc;
 
-    extension.tick();
-
     emanager->log();
 
     if(power_options->profiling && ac_pc == power_options->profile_to)
@@ -632,7 +592,7 @@ void ac_behavior( instruction )
         std::exit(0);
     }
 
-    if(elogger.is_logging())
+    //if(elogger.is_logging())
     {
         //std::cout << std::endl;
         //std::cout << "pc=" << std::hex << ac_pc << std::endl;
@@ -694,6 +654,9 @@ void ac_behavior( Type_Extended_II ){}
 //!Instruction MOV behavior method.
 void ac_behavior( MOV )
 {
+    if(extension.state != EXT_NONE)
+        std::cerr << "Oops EXT.MOV not supported" << std::endl;
+
     uint16_t operand = doubleop_source(mpu, RB, as, bw, rsrc);
 
     if(rdst == REG_PC && syscalls->is_syscall(operand)) // Syscall: run symbolically
@@ -714,16 +677,16 @@ void ac_behavior( MOV )
 //!Instruction ADD behavior method.
 void ac_behavior( ADD )
 {
-    extension_repeat_t repeat;
-    extension_repeat(extension, repeat, RB, as, ad, "ADD");
+    uint16_t pc_before = ac_pc - 2;
+    if(extension.state == EXT_RDY)
+        extension.make_repeat(RB);
 
     uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
     sr_flags_t sr(RB);
 
-    for(size_t i = repeat.count; i--; )
-        operand_dst += operand_src;
+    operand_dst += operand_src;
 
     sr.set_Z(operand_dst == 0);
     if(bw)
@@ -741,8 +704,7 @@ void ac_behavior( ADD )
     uint32_t promoted_dst = operand_tmp;
     uint32_t promoted_result = promoted_dst;
 
-    for(size_t i = repeat.count; i--; )
-        promoted_result += promoted_src;
+    promoted_result += promoted_src;
 
     if(bw)
         sr.set_C(carry8(promoted_result));
@@ -750,8 +712,16 @@ void ac_behavior( ADD )
         sr.set_C(carry16(promoted_result));
 
     doubleop_dest(mpu, RB, operand_dst, ad, bw, rdst);
-    ac_pc = RB[REG_PC];
-    extension.state = EXT_NONE;
+
+    if(extension.state == EXT_NONE)
+        ac_pc = RB[REG_PC];
+    else if(extension.state == EXT_RUN)
+    {
+        ac_pc  = pc_before;
+        RB[REG_PC] = pc_before;
+        if(--extension.repeat.count == 0)
+            extension.state = EXT_NONE;
+    }
 
     emanager->add_cycles(ESTIMATE_PIPELINE(doubleop_cycles(as, ad, rsrc, rdst, false)), 0);
 }
@@ -759,6 +729,9 @@ void ac_behavior( ADD )
 //!Instruction ADDC behavior method.
 void ac_behavior( ADDC )
 {
+    if(extension.state != EXT_NONE)
+        std::cerr << "Oops EXT.ADDC not supported" << std::endl;
+
     uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
@@ -796,6 +769,9 @@ void ac_behavior( ADDC )
 //!Instruction SUB behavior method.
 void ac_behavior( SUB )
 {
+    if(extension.state != EXT_NONE)
+        std::cerr << "Oops EXT.SUB not supported" << std::endl;
+
     uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
@@ -833,6 +809,9 @@ void ac_behavior( SUB )
 //!Instruction SUBC behavior method.
 void ac_behavior( SUBC )
 {
+    if(extension.state != EXT_NONE)
+        std::cerr << "Oops EXT.SUBC not supported" << std::endl;
+
     uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
@@ -870,6 +849,9 @@ void ac_behavior( SUBC )
 //!Instruction CMP behavior method.
 void ac_behavior( CMP )
 {
+    if(extension.state != EXT_NONE)
+        std::cerr << "Oops EXT.CMP not supported" << std::endl;
+
     uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
@@ -903,6 +885,9 @@ void ac_behavior( DADD )
 //!Instruction BIT behavior method.
 void ac_behavior( BIT )
 {
+    if(extension.state != EXT_NONE)
+        std::cerr << "Oops EXT.BIT not supported" << std::endl;
+
     uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t tmp = operand_dst;
@@ -928,6 +913,9 @@ void ac_behavior( BIT )
 //!Instruction BIC behavior method.
 void ac_behavior( BIC )
 {
+    if(extension.state != EXT_NONE)
+        std::cerr << "Oops EXT.BIC not supported" << std::endl;
+
     uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
 
@@ -942,6 +930,9 @@ void ac_behavior( BIC )
 //!Instruction BIS behavior method.
 void ac_behavior( BIS )
 {
+    if(extension.state != EXT_NONE)
+        std::cerr << "Oops EXT.BIS not supported" << std::endl;
+
     uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
 
@@ -956,6 +947,9 @@ void ac_behavior( BIS )
 //!Instruction XOR behavior method.
 void ac_behavior( XOR )
 {
+    if(extension.state != EXT_NONE)
+        std::cerr << "Oops EXT.XOR not supported" << std::endl;
+
     uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     uint16_t operand_tmp = operand_dst;
@@ -985,6 +979,9 @@ void ac_behavior( XOR )
 //!Instruction AND behavior method.
 void ac_behavior( AND )
 {
+    if(extension.state != EXT_NONE)
+        std::cerr << "Oops EXT.AND not supported" << std::endl;
+
     uint16_t operand_src = doubleop_source(mpu, RB, as, bw, rsrc);
     uint16_t operand_dst = doubleop_dest_operand(mpu, RB, ad, bw, rdst);
     sr_flags_t sr(RB);
@@ -1037,28 +1034,15 @@ void ac_behavior( RRC )
 //!Instruction RRA behavior method.
 void ac_behavior( RRA )
 {
-    extension_repeat_t repeat;
-    if(extension.state == EXT_RUN)
-    {
-        //std::cout << "Extended RRA" << std::endl;
-
-        if(ad == 0)
-        {
-            extension_to_repeat(extension, RB, repeat.zc, repeat.al, repeat.count);
-            //std::cout << " " << std::dec << repeat.count << " times" << std::endl;
-        }
-        else
-            std::cerr << "Oops, extension not supported yet." << std::endl;
-    }
+    uint16_t pc_before = ac_pc - 2;
+    if(extension.state == EXT_RDY)
+        extension.make_repeat(RB);
 
     uint16_t operand = doubleop_source(mpu, RB, ad, bw, rdst);
     sr_flags_t sr(RB);
 
-    for(size_t i = repeat.count; i--; )
-    {
-        sr.set_C(operand & 1);
-        operand = ((operand & 0x8000) | (operand >> 1));
-    }
+    sr.set_C(operand & 1);
+    operand = ((operand & 0x8000) | (operand >> 1));
 
     if(bw)
         sr.set_N(negative8(operand));
@@ -1069,8 +1053,15 @@ void ac_behavior( RRA )
     sr.set_Z(operand == 0);
 
     doubleop_dest(mpu, RB, operand, ad, bw, rdst);
-    ac_pc = RB[REG_PC];
-    extension.state = EXT_NONE;
+
+    if(extension.state == EXT_NONE)
+        ac_pc = RB[REG_PC];
+    else if(extension.state == EXT_RUN)
+    {
+        ac_pc  = pc_before;
+        if(--extension.repeat.count == 0)
+            extension.state = EXT_NONE;
+    }
 
     emanager->add_cycles(ESTIMATE_PIPELINE(format2_0_cycles(ad)), 0);
 }

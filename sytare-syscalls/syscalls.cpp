@@ -37,7 +37,7 @@ static const elf_wl_functions_t whitelist{
 
     // cc2500
     "cc2500_init_hw",
-    "cc2500_drv_restore_hw",
+    //"cc2500_drv_restore_hw",
     "cc2500_configure_hw",
     "cc2500_idle_hw",
     "cc2500_sleep_hw",
@@ -124,10 +124,10 @@ void Syscalls::run(
     }
     else if(name == "cc2500_init_hw")
         cc2500_init();
-    else if(name == "cc2500_drv_restore_hw")
+    /*else if(name == "cc2500_drv_restore_hw")
     {
         // TODO
-    }
+    }*/
     else if(name == "cc2500_configure_hw")
         cc2500_configure();
     else if(name == "cc2500_idle_hw")
@@ -396,7 +396,7 @@ void Syscalls::dma_memset(
     uint16_t dst, uint8_t val, uint16_t len
 )
 {
-    std::cout << std::hex << "memset( " << dst << ", " << val << ", " << len << ")" << std::endl;
+    std::cout << std::hex << "memset( " << dst << ", " << (uint16_t) val << ", " << len << ")" << std::endl;
 
     if(!len)
         return;
@@ -416,8 +416,15 @@ void Syscalls::dma_memcpy(
     if(!len)
         return;
 
-    for(uint16_t i = len; i--;)
+    size_t j = 0;
+    for(uint16_t i = len; i--; ++j)
+    {
+        if((j % 16) == 0)
+            std::cout << std::endl;
+        std::cout << std::hex << (unsigned int) DM.read_byte(src) << ' ';
         platform.mpu.write_byte(dst++, DM.read_byte(src++));
+    }
+    std::cout << std::endl;
     emanager.transaction((1 + 2*len) / MCLK_FREQ, 0, 0);
 }
 
