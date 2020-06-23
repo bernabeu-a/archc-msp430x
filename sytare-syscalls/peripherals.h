@@ -21,6 +21,9 @@ class Peripheral
 
         virtual current_t current_ua() const = 0;
 
+        // internal
+        virtual void reboot();
+
     protected:
         bool check_initialized() const;
 
@@ -226,6 +229,19 @@ struct platform_t
     current_t current_ua() const
     {
         return cpu.current_ua() + leds.current_ua() + port.current_ua() + spi.current_ua() + cc2500.current_ua() + temperature.current_ua() + accelerometer.current_ua() + mpu.current_ua();
+    }
+
+    void reboot()
+    {
+        cpu.reboot();
+        leds.reboot();
+        port.reboot();
+        spi.reboot();
+        cc2500.reboot();
+        temperature.reboot();
+        accelerometer.reboot();
+        energy.reboot();
+        mpu.reboot();
     }
 };
 

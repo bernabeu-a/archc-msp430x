@@ -629,6 +629,7 @@ void ac_behavior( instruction )
             // Reboot
             RB[REG_PC] = DM.read(0xfffe); // Reset vector
             erase_memory_on_boot(DM);
+            platform->reboot();
             ac_pc = RB[REG_PC];
 
             static size_t total_lifecycles = 0;

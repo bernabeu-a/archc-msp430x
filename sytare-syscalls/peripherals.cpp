@@ -13,6 +13,11 @@ void Peripheral::init()
     initialized = true;
 }
 
+void Peripheral::reboot()
+{
+    initialized = false;
+}
+
 bool Peripheral::check_initialized() const
 {
     if(!initialized)
@@ -371,6 +376,7 @@ void MPU::init(size_t address_b, size_t address_e, size_t nregions)
     address_begin = address_b;
     address_end = address_e;
     block_size = (address_end-address_begin) / nregions;
+    segments.clear();
     segments.resize(nregions, false); // Every segment is unlocked by default
 }
 
