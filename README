@@ -1,1 +1,66 @@
-`acsim msp430x.ac -noabi`
+# Install SystemC
+
+Get SystemC from here [accellera.org](https://www.accellera.org/downloads/standards/systemc)
+
+Extract
+
+```sh
+cd systemc-2.3.3
+./configure --prefix=$(pwd)/../systemcinstall 'CXXFLAGS=-std=c++11'
+make
+make check
+make install
+```
+It will install systemc on a folder named systemcinstall at the same level of the current directory
+
+# Install ArchC
+
+Get Arch from github
+```sh
+git clone https://github.com/ArchC/ArchC.git
+```
+Dependecies : bison flex libdw-dev autoconf libtool autoreconf make gcc
+
+```sh
+cd Archc
+./autogen.sh
+INSTALLDIR=$(pwd)/../acinstall
+SYSTEMCPATH=$(pwd)/../systemcinstall
+./configure --prefix=$INSTALLDIR --with-systemc=$SYSTEMCPATH 'CXXFLAGS=-std=c++11'
+make 
+make install
+```
+
+# Configure PATH environment
+
+In the Archc folder:
+```sh
+source env.sh
+```
+
+You can also copy PATH variable to .bashrc
+You can also add this line for future use of systemc
+```sh
+export SYSTEMC_HOME=PATH_TO/systemcinstall
+```
+
+Ensure everything is OK
+
+```sh
+acsim -h
+```
+
+# Compiling simulator
+
+```sh
+acsim msp430x.ac -noabi
+```
+**Warning**
+```sh
+acsim msp430x.ac -noabi
+```
+might change the MAKEFILE, checkout the MAKEFILE from the repo after the command
+
+```sh
+make
+```
